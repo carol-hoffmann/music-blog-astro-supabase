@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { posts } from "../../lib/posts";
+
+export async function getStaticPaths() {
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+---
+
+<BaseLayout title={`${post.title} | Music Blog`}>
+  <article class="news-post">
+    <header class="news-post-header">
+      <h1>{post.title}</h1>
+      <p class="news-post-meta">
+        {post.date} · {post.genre} · {post.artist}
+      </p>
+    </header>
+
+    <pre style="color: white; padding: 16px; border: 1px solid rgba(255,255,255,0.2);">
+{JSON.stringify(post, null, 2)}
+</pre>
+
+
+    <div class="news-post-content">
+      <p>{post.content}</p>
+    </div>
+
+    <a href="/posts" class="back-button">← Back to posts</a>
+  </article>
+</BaseLayout>

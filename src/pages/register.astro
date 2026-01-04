@@ -1,0 +1,79 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Register | Music Blog">
+  <section class="form-page">
+    <h1>Create account</h1>
+    <p class="meta">Register to publish posts and comment.</p>
+
+    <form class="form-card" method="post">
+      <label>
+        Full name
+        <input type="text" name="full_name" required />
+      </label>
+
+      <label>
+        Username
+        <input type="text" name="username" required />
+      </label>
+
+      <label>
+        Favourite genre
+        <input type="text" name="favourite_genre" />
+      </label>
+
+      <label>
+        Email
+        <input type="email" name="email" required />
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" minlength="6" required />
+      </label>
+
+      <button class="btn" type="submit">Register</button>
+
+      <p class="meta" style="margin-top:12px;">
+        Already have an account? <a href="/login">Login</a>
+      </p>
+    </form>
+
+    <script type="module">
+  import { supabase } from "../lib/supabaseClient";
+
+  const form = document.querySelector("form");
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const email = String(formData.get("email") || "");
+    const password = String(formData.get("password") || "");
+
+    // Campos extras (guardamos depois numa tabela profiles):
+    const full_name = String(formData.get("full_name") || "");
+    const username = String(formData.get("username") || "");
+    const favourite_genre = String(formData.get("favourite_genre") || "");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name, username, favourite_genre },
+      },
+    });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert("Registered! Check your email if confirmation is enabled.");
+    window.location.href = "/account";
+  });
+</script>
+
+  </section>
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+// Simulação de proteção (depois Supabase):
+const isLoggedIn = false;
+---
+
+<BaseLayout title="New Post | Music Blog">
+  <section class="form-page">
+    <h1>New post</h1>
+
+    {!isLoggedIn ? (
+      <div class="form-card">
+        <p class="meta">You must be logged in to create a post.</p>
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn" href="/login">Go to login</a>
+          <a class="btn" href="/register">Create account</a>
+        </div>
+      </div>
+    ) : (
+      <form class="form-card" method="post">
+        <label>
+          Title
+          <input type="text" name="title" required />
+        </label>
+
+        <label>
+          Genre
+          <input type="text" name="genre" />
+        </label>
+
+        <label>
+          Artist
+          <input type="text" name="artist" />
+        </label>
+
+        <label>
+          Content
+          <textarea name="content" rows="8" required></textarea>
+        </label>
+
+        <button class="btn" type="submit">Publish</button>
+      </form>
+    )}
+  </section>
+</BaseLayout>

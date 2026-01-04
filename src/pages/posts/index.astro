@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { posts } from "../../lib/posts";
+
+const sortedPosts = [...posts].sort(
+  (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+);
+---
+
+<BaseLayout title="All Posts | Music Blog">
+  <section class="news-hero">
+    <div class="news-hero-overlay"></div>
+
+    <div class="news-hero-content">
+      <div class="news-hero-header">
+        <h1 class="news-heading">ALL POSTS</h1>
+        <p class="news-subheading">
+          All published articles in chronological order.
+        </p>
+      </div>
+
+      <div class="news-grid">
+        {sortedPosts.map((post) => (
+          <a href={`/posts/${post.slug}`} class="news-card">
+            <div class="news-card-content">
+              <div class="news-card-date">{post.date}</div>
+              <div class="news-card-title">{post.title}</div>
+              <div class="news-card-excerpt">{post.excerpt}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

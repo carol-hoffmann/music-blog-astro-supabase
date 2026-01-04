@@ -1,7 +1,18 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import PostCard from "../components/PostCard.astro";
+import { posts } from "../lib/posts";
+
+const latestFive = [...posts]
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  .slice(0, 5);
 ---
+
 <BaseLayout title="Music Blog | Home">
-  <h1>Music Blog</h1>
-  <p class="meta">Scaffold is working correctly.</p>
+  <h1>Latest posts</h1>
+  <p class="meta">The 5 most recent posts in chronological order.</p>
+
+  <div style="margin-top:16px; display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+  {latestFive.map((post) => <PostCard post={post} />)}
+  </div>
 </BaseLayout>

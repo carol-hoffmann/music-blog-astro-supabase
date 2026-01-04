@@ -1,0 +1,76 @@
+---
+const { pathname } = Astro.url;
+
+// Por enquanto é fake (até Supabase Auth):
+const isLoggedIn = false;
+---
+
+<header class="hero-header header-dark">
+  <div class="header-left">
+    <a href="/" class="site-title">
+      MUSIC BLOG · ASTRO + SUPABASE
+    </a>
+  </div>
+
+  <div class="header-center">
+    <a href="/" class="header-logo-link" aria-label="Go to home">
+      <!-- Se você quiser reutilizar um logo depois, é só colocar aqui -->
+      <!-- <img src="/images/logo.png" alt="Site Logo" class="header-logo" /> -->
+      <span style="color:#f4efe8; font-weight:900; letter-spacing:0.2em; font-size:12px;">
+        MB
+      </span>
+    </a>
+  </div>
+
+  <nav class="nav_bar header-right">
+    <ul>
+      <li>
+        <a href="/" class={`nav-link ${pathname === "/" ? "nav-link--active" : ""}`}>
+          HOME
+        </a>
+      </li>
+
+      <li>
+        <a href="/posts" class={`nav-link ${pathname.startsWith("/posts") ? "nav-link--active" : ""}`}>
+          POSTS
+        </a>
+      </li>
+
+      <li>
+        <a href="/posts/new" class={`nav-link ${pathname.startsWith("/posts/new") ? "nav-link--active" : ""}`}>
+          NEW POST
+        </a>
+      </li>
+
+      {isLoggedIn ? (
+        <li>
+          <a href="/account" class={`nav-link ${pathname.startsWith("/account") ? "nav-link--active" : ""}`}>
+            ACCOUNT
+          </a>
+        </li>
+      ) : (
+        <>
+          <li>
+            <a href="/login" class={`nav-link ${pathname.startsWith("/login") ? "nav-link--active" : ""}`}>
+              LOGIN
+            </a>
+          </li>
+
+          <li>
+            <a href="/register" class={`nav-link ${pathname.startsWith("/register") ? "nav-link--active" : ""}`}>
+              REGISTER
+            </a>
+          </li>
+
+          <li>
+            <a href="/account" class={`nav-link ${pathname.startsWith("/account") ? "nav-link--active" : ""}`}>
+              ACCOUNT
+            </a>
+          </li>
+        </>
+      )}
+    </ul>
+  </nav>
+</header>
+
+<hr class="hero-line" />

@@ -1,0 +1,52 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Login | Music Blog">
+  <section class="form-page">
+    <h1>Login</h1>
+    <p class="meta">Access your account to create and manage posts.</p>
+
+    <form class="form-card" method="post">
+      <label>
+        Email
+        <input type="email" name="email" required />
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" required />
+      </label>
+
+      <button class="btn" type="submit">Login</button>
+
+      <p class="meta" style="margin-top:12px;">
+        Don't have an account? <a href="/register">Register</a>
+      </p>
+    </form>
+
+    <script type="module">
+  import { supabase } from "../lib/supabaseClient";
+
+  const form = document.querySelector("form");
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const email = String(formData.get("email") || "");
+    const password = String(formData.get("password") || "");
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    window.location.href = "/account";
+  });
+</script>
+
+  </section>
+</BaseLayout>
