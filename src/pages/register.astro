@@ -50,7 +50,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </script>
 
   <script type="module">
-    import { supabase } from "/lib/supabaseClient.js";
+   import { supabase } from "../lib/supabaseClient";
+
 
     console.log("✅ register script loaded");
     console.log("SUPABASE URL:", window.PUBLIC_SUPABASE_URL ? "OK" : "MISSING");
