@@ -43,8 +43,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </form>
   </section>
 
+  <script is:inline>
+  window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
+  window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
+  </script>
+
   <script type="module">
-    import { supabase } from "@/lib/supabaseClient";
+    import { supabase } from "/lib/supabaseClient.js";
+
 
 
     console.log("✅ register script loaded");
