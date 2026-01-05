@@ -43,21 +43,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </form>
   </section>
 
-  <!-- Inject Supabase env vars into the browser -->
-  <script is:inline>
-    window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
-    window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
-  </script>
-
+  <!-- IMPORTANT: NÃO usar is:inline aqui -->
   <script type="module">
-    import { supabase } from "../lib/supabaseClient.ts";
-
-    console.log("✅ register script loaded");
-    console.log("SUPABASE URL:", window.PUBLIC_SUPABASE_URL ? "OK" : "MISSING");
-    console.log("SUPABASE KEY:", window.PUBLIC_SUPABASE_ANON_KEY ? "OK" : "MISSING");
+    import { supabase } from "../lib/supabaseClient";
 
     const form = document.querySelector("#registerForm");
-
     const msg = document.querySelector("#msg");
 
     function setMsg(text) {
@@ -69,9 +59,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       setMsg("Creating account...");
 
       const formData = new FormData(form);
+
       const email = String(formData.get("email") || "");
       const password = String(formData.get("password") || "");
-
       const full_name = String(formData.get("full_name") || "");
       const username = String(formData.get("username") || "");
       const favourite_genre = String(formData.get("favourite_genre") || "");
@@ -85,15 +75,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       });
 
       if (error) {
-        console.error("❌ signUp error:", error);
+        console.error(error);
         setMsg("Error: " + error.message);
         return;
       }
 
-      console.log("✅ signUp ok:", data);
-      setMsg("Registered! If email confirmation is enabled, check your inbox.");
+      setMsg("Registered! Check your email if confirmation is enabled.");
       window.location.href = "/account";
     });
   </script>
 </BaseLayout>
-
