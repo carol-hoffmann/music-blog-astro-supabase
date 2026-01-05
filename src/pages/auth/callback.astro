@@ -1,0 +1,47 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Auth Callback | Music Blog">
+  <section class="form-page">
+    <h1>Finishing confirmation…</h1>
+    <p class="meta" id="msg">Please wait.</p>
+  </section>
+
+  <script>
+    import { supabase } from "../../lib/supabaseClient";
+
+    const msg = document.querySelector("#msg");
+    const setMsg = (t) => msg && (msg.textContent = t);
+
+    (async () => {
+      try {
+        // Evita erro de tipagem no editor e funciona se a função existir:
+        const exchange = supabase.auth.exchangeCodeForSession?.bind(supabase.auth);
+
+        // Alguns emails retornam com ?code=...
+        if (window.location.search.includes("code=") && exchange) {
+          const { error } = await exchange(window.location.href);
+          if (error) throw error;
+        }
+
+        // Pega a sessão (se existir)
+        const { data } = await supabase.auth.getSession();
+
+        if (data?.session) {
+          setMsg("Confirmed! Redirecting…");
+          window.location.href = "/account";
+          return;
+        }
+
+        // Mesmo sem session, a confirmação pode ter sido concluída
+        setMsg("Email confirmed. Please login.");
+        setTimeout(() => (window.location.href = "/login"), 1200);
+      } catch (err) {
+        console.error(err);
+        setMsg("Confirmation finished. Please login.");
+        setTimeout(() => (window.location.href = "/login"), 1200);
+      }
+    })();
+  </script>
+</BaseLayout>
