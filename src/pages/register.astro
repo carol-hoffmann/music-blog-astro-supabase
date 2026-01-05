@@ -7,7 +7,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <h1>Create account</h1>
     <p class="meta">Register to publish posts and comment.</p>
 
-    <form class="form-card" method="post">
+    <form id="registerForm" class="form-card">
       <label>
         Full name
         <input type="text" name="full_name" required />
@@ -43,21 +43,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </form>
   </section>
 
+  <!-- Inject Supabase env vars into the browser -->
   <script is:inline>
-  window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
-  window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
+    window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
+    window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
   </script>
 
   <script type="module">
     import { supabase } from "/lib/supabaseClient.js";
 
-
-
     console.log("✅ register script loaded");
-    console.log("SUPABASE URL:", import.meta.env.PUBLIC_SUPABASE_URL ? "OK" : "MISSING");
-    console.log("SUPABASE KEY:", import.meta.env.PUBLIC_SUPABASE_ANON_KEY ? "OK" : "MISSING");
+    console.log("SUPABASE URL:", window.PUBLIC_SUPABASE_URL ? "OK" : "MISSING");
+    console.log("SUPABASE KEY:", window.PUBLIC_SUPABASE_ANON_KEY ? "OK" : "MISSING");
 
-    const form = document.querySelector("form");
+    const form = document.querySelector("#registerForm");
+
     const msg = document.querySelector("#msg");
 
     function setMsg(text) {
@@ -92,7 +92,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       console.log("✅ signUp ok:", data);
       setMsg("Registered! If email confirmation is enabled, check your inbox.");
-      // opcional: mandar pra account
       window.location.href = "/account";
     });
   </script>

@@ -16,46 +16,43 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <button class="btn" id="logoutBtn" type="button">Logout</button>
       </div>
     </div>
-
-    <script is:inline>
-        window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
-        window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
-    </script>
-
-    <script type="module">
-      import { supabase } from "/lib/supabaseClient.js";
-
-
-      const status = document.querySelector("#status");
-      const info = document.querySelector("#info");
-      const logoutBtn = document.querySelector("#logoutBtn");
-
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-
-      if (!session) {
-        status.textContent = "You are not logged in.";
-        info.innerHTML = `
-          <p class="meta">
-            <a class="btn" href="/login">Go to login</a>
-          </p>
-        `;
-      } else {
-        status.textContent = "Logged in.";
-        const user = session.user;
-
-        info.innerHTML = `
-          <p><strong>Email:</strong> ${user.email}</p>
-          <p><strong>Name:</strong> ${user.user_metadata?.full_name ?? "-"}</p>
-          <p><strong>Username:</strong> ${user.user_metadata?.username ?? "-"}</p>
-          <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
-        `;
-      }
-
-      logoutBtn?.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        window.location.href = "/";
-      });
-    </script>
   </section>
+
+  <script is:inline>
+    window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
+    window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
+  </script>
+
+  <script type="module">
+    import { supabase } from "/lib/supabaseClient.js";
+
+    console.log("✅ account script loaded");
+
+    const status = document.querySelector("#status");
+    const info = document.querySelector("#info");
+    const logoutBtn = document.querySelector("#logoutBtn");
+
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+
+    if (!session) {
+      status.textContent = "You are not logged in.";
+      info.innerHTML = `<p><a class="btn" href="/login">Go to login</a></p>`;
+    } else {
+      status.textContent = "Logged in.";
+      const user = session.user;
+
+      info.innerHTML = `
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Name:</strong> ${user.user_metadata?.full_name ?? "-"}</p>
+        <p><strong>Username:</strong> ${user.user_metadata?.username ?? "-"}</p>
+        <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
+      `;
+    }
+
+    logoutBtn?.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    });
+  </script>
 </BaseLayout>
