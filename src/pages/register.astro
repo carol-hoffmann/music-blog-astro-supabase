@@ -35,45 +35,60 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       <button class="btn" type="submit">Register</button>
 
+      <p id="msg" class="meta" style="margin-top:12px;"></p>
+
       <p class="meta" style="margin-top:12px;">
         Already have an account? <a href="/login">Login</a>
       </p>
     </form>
+  </section>
 
-    <script type="module">
-  import { supabase } from "../lib/supabaseClient";
+  <script type="module">
+    import { supabase } from "@/lib/supabaseClient";
 
-  const form = document.querySelector("form");
 
-  form?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    console.log("✅ register script loaded");
+    console.log("SUPABASE URL:", import.meta.env.PUBLIC_SUPABASE_URL ? "OK" : "MISSING");
+    console.log("SUPABASE KEY:", import.meta.env.PUBLIC_SUPABASE_ANON_KEY ? "OK" : "MISSING");
 
-    const formData = new FormData(form);
-    const email = String(formData.get("email") || "");
-    const password = String(formData.get("password") || "");
+    const form = document.querySelector("form");
+    const msg = document.querySelector("#msg");
 
-    // Campos extras (guardamos depois numa tabela profiles):
-    const full_name = String(formData.get("full_name") || "");
-    const username = String(formData.get("username") || "");
-    const favourite_genre = String(formData.get("favourite_genre") || "");
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name, username, favourite_genre },
-      },
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
+    function setMsg(text) {
+      if (msg) msg.textContent = text;
     }
 
-    alert("Registered! Check your email if confirmation is enabled.");
-    window.location.href = "/account";
-  });
-</script>
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMsg("Creating account...");
 
-  </section>
+      const formData = new FormData(form);
+      const email = String(formData.get("email") || "");
+      const password = String(formData.get("password") || "");
+
+      const full_name = String(formData.get("full_name") || "");
+      const username = String(formData.get("username") || "");
+      const favourite_genre = String(formData.get("favourite_genre") || "");
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name, username, favourite_genre },
+        },
+      });
+
+      if (error) {
+        console.error("❌ signUp error:", error);
+        setMsg("Error: " + error.message);
+        return;
+      }
+
+      console.log("✅ signUp ok:", data);
+      setMsg("Registered! If email confirmation is enabled, check your inbox.");
+      // opcional: mandar pra account
+      window.location.href = "/account";
+    });
+  </script>
 </BaseLayout>
+

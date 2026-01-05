@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase env vars. Check .env file.");
+  throw new Error("Missing Supabase env vars. Check .env and Netlify env vars.");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
