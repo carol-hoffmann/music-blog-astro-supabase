@@ -14,6 +14,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn" href="/posts/new">Create new post</a>
         <button class="btn" id="logoutBtn" type="button">Logout</button>
+        <button class="btn" id="clearBtn" type="button">Clear local session</button>
       </div>
     </div>
   </section>
@@ -22,11 +23,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     import { supabase } from "../lib/supabaseClient";
 
     document.addEventListener("DOMContentLoaded", () => {
-      console.log("✅ account script loaded");
-
       const statusEl = document.querySelector("#status");
       const infoEl = document.querySelector("#info");
       const logoutBtn = document.querySelector("#logoutBtn");
+      const clearBtn = document.querySelector("#clearBtn");
 
       const setStatus = (t) => statusEl && (statusEl.textContent = t);
       const setInfo = (h) => infoEl && (infoEl.innerHTML = h);
@@ -35,34 +35,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         try {
           setStatus("Checking session...");
 
-          // 1) Checa sessão local
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          console.log("getSession()", sessionData, sessionError);
+          // Usa getUser (mais confiável em produção)
+          const { data, error } = await supabase.auth.getUser();
 
-          if (sessionError) {
-            console.error("getSession error:", sessionError);
-            setStatus("Error checking session.");
-            setInfo(`<p class="meta">Error: ${sessionError.message}</p><p><a class="btn" href="/login">Go to login</a></p>`);
-            return;
-          }
-
-          // 2) Checa usuário (mais confiável em alguns casos)
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          console.log("getUser()", userData, userError);
-
-          if (userError) {
-            // Se não tem user, você não está logada (ou token inválido)
+          if (error || !data?.user) {
             setStatus("You are not logged in.");
             setInfo(`<p><a class="btn" href="/login">Go to login</a></p>`);
             return;
           }
 
-          const user = userData.user;
-          if (!user) {
-            setStatus("You are not logged in.");
-            setInfo(`<p><a class="btn" href="/login">Go to login</a></p>`);
-            return;
-          }
+          const user = data.user;
 
           setStatus("Logged in.");
           setInfo(`
@@ -72,22 +54,33 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
           `);
         } catch (err) {
-          console.error("Account render crash:", err);
+          console.error("Account error:", err);
           setStatus("Account error.");
-          setInfo(`<p class="meta">Open the console to see details.</p>`);
+          setInfo(`<p class="meta">Open DevTools → Console for details.</p>`);
         }
       }
 
       renderAccount();
 
-      // Atualiza se o estado de auth mudar
       supabase.auth.onAuthStateChange(() => {
         renderAccount();
       });
 
       logoutBtn?.addEventListener("click", async () => {
-        await supabase.auth.signOut();
+        try {
+          await supabase.auth.signOut();
+        } catch {}
         window.location.href = "/";
+      });
+
+      clearBtn?.addEventListener("click", () => {
+        // Remove qualquer token do Supabase salvo no browser
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("sb-") && key.includes("-auth-token")) {
+            localStorage.removeItem(key);
+          }
+        }
+        window.location.href = "/login";
       });
     });
   </script>
