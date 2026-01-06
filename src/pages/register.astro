@@ -50,50 +50,53 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const formEl = document.querySelector("#registerForm");
       const msgEl = document.querySelector("#msg");
 
-      const setMsg = (text) => {
-        if (msgEl) msgEl.textContent = text;
-      };
+      const setMsg = (t) => msgEl && (msgEl.textContent = t);
 
-      if (!(formEl instanceof HTMLFormElement)) return;
+      (async () => {
+        // ✅ If already logged in, go to account
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          window.location.href = "/account";
+          return;
+        }
 
-      formEl.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        setMsg("Creating account...");
+        if (!(formEl instanceof HTMLFormElement)) return;
 
-        const formData = new FormData(formEl);
+        formEl.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setMsg("Creating account...");
 
-        const email = String(formData.get("email") || "");
-        const password = String(formData.get("password") || "");
-        const full_name = String(formData.get("full_name") || "");
-        const username = String(formData.get("username") || "");
-        const favourite_genre = String(formData.get("favourite_genre") || "");
+          const formData = new FormData(formEl);
 
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name, username, favourite_genre },
-            // manda o link de confirmação voltar pro seu site:
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
+          const email = String(formData.get("email") || "");
+          const password = String(formData.get("password") || "");
+          const full_name = String(formData.get("full_name") || "");
+          const username = String(formData.get("username") || "");
+          const favourite_genre = String(formData.get("favourite_genre") || "");
+
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { full_name, username, favourite_genre },
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
+
+          if (error) {
+            setMsg("Error: " + error.message);
+            return;
+          }
+
+          if (!data.session) {
+            setMsg("Account created! Check your email to confirm, then login.");
+            setTimeout(() => (window.location.href = "/login"), 1500);
+            return;
+          }
+
+          window.location.href = "/account";
         });
-
-        if (error) {
-          console.error(error);
-          setMsg("Error: " + error.message);
-          return;
-        }
-
-        // Se confirmação de email estiver ligada, session pode vir null:
-        if (!data.session) {
-          setMsg("Account created! Check your email to confirm, then login.");
-          setTimeout(() => (window.location.href = "/login"), 1500);
-          return;
-        }
-
-        setMsg("Registered! Redirecting...");
-        window.location.href = "/account";
-      });
+      })();
     });
   </script>
 </BaseLayout>

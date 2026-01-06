@@ -7,7 +7,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <h1>Login</h1>
     <p class="meta">Access your account to create and manage posts.</p>
 
-   <form id="loginForm" class="form-card">
+    <form id="loginForm" class="form-card" novalidate>
       <label>
         Email
         <input type="email" name="email" required />
@@ -28,41 +28,53 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </form>
   </section>
 
-  <script is:inline>
-    window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
-    window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
-  </script>
+  <script>
+    import { supabase } from "../lib/supabaseClient";
 
-  <script type="module">
-    import { supabase } from "../lib/supabaseClient.ts";
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("✅ login script loaded");
 
-    console.log("✅ login script loaded");
+      const formEl = document.querySelector("#loginForm");
+      const msgEl = document.querySelector("#msg");
 
-    const form = document.querySelector("#loginForm");
-    const msg = document.querySelector("#msg");
+      const setMsg = (t) => msgEl && (msgEl.textContent = t);
 
-    function setMsg(text) {
-      if (msg) msg.textContent = text;
-    }
+      (async () => {
+        // ✅ If already logged in, go to account
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          window.location.href = "/account";
+          return;
+        }
 
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      setMsg("Logging in...");
+        if (!(formEl instanceof HTMLFormElement)) return;
 
-      const formData = new FormData(form);
-      const email = String(formData.get("email") || "");
-      const password = String(formData.get("password") || "");
+        formEl.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setMsg("Logging in...");
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+          const formData = new FormData(formEl);
+          const email = String(formData.get("email") || "");
+          const password = String(formData.get("password") || "");
 
-      if (error) {
-        console.error("❌ login error:", error);
-        setMsg("Error: " + error.message);
-        return;
-      }
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-      setMsg("Success! Redirecting...");
-      window.location.href = "/account";
+          if (error) {
+            setMsg("Error: " + error.message);
+            return;
+          }
+
+          if (!data.session) {
+            setMsg("Login succeeded but no session found.");
+            return;
+          }
+
+          window.location.href = "/account";
+        });
+      })();
     });
   </script>
 </BaseLayout>
