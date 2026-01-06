@@ -18,41 +18,77 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <script is:inline>
-    window.PUBLIC_SUPABASE_URL = "{import.meta.env.PUBLIC_SUPABASE_URL}";
-    window.PUBLIC_SUPABASE_ANON_KEY = "{import.meta.env.PUBLIC_SUPABASE_ANON_KEY}";
-  </script>
+  <script>
+    import { supabase } from "../lib/supabaseClient";
 
-  <script type="module">import { supabase } from "../lib/supabaseClient";
-    import { supabase } from "../lib/supabaseClient.ts";
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("✅ account script loaded");
 
-    console.log("✅ account script loaded");
+      const statusEl = document.querySelector("#status");
+      const infoEl = document.querySelector("#info");
+      const logoutBtn = document.querySelector("#logoutBtn");
 
-    const status = document.querySelector("#status");
-    const info = document.querySelector("#info");
-    const logoutBtn = document.querySelector("#logoutBtn");
+      const setStatus = (t) => statusEl && (statusEl.textContent = t);
+      const setInfo = (h) => infoEl && (infoEl.innerHTML = h);
 
-    const { data } = await supabase.auth.getSession();
-    const session = data.session;
+      async function renderAccount() {
+        try {
+          setStatus("Checking session...");
 
-    if (!session) {
-      status.textContent = "You are not logged in.";
-      info.innerHTML = `<p><a class="btn" href="/login">Go to login</a></p>`;
-    } else {
-      status.textContent = "Logged in.";
-      const user = session.user;
+          // 1) Checa sessão local
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          console.log("getSession()", sessionData, sessionError);
 
-      info.innerHTML = `
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>Name:</strong> ${user.user_metadata?.full_name ?? "-"}</p>
-        <p><strong>Username:</strong> ${user.user_metadata?.username ?? "-"}</p>
-        <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
-      `;
-    }
+          if (sessionError) {
+            console.error("getSession error:", sessionError);
+            setStatus("Error checking session.");
+            setInfo(`<p class="meta">Error: ${sessionError.message}</p><p><a class="btn" href="/login">Go to login</a></p>`);
+            return;
+          }
 
-    logoutBtn?.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "/";
+          // 2) Checa usuário (mais confiável em alguns casos)
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          console.log("getUser()", userData, userError);
+
+          if (userError) {
+            // Se não tem user, você não está logada (ou token inválido)
+            setStatus("You are not logged in.");
+            setInfo(`<p><a class="btn" href="/login">Go to login</a></p>`);
+            return;
+          }
+
+          const user = userData.user;
+          if (!user) {
+            setStatus("You are not logged in.");
+            setInfo(`<p><a class="btn" href="/login">Go to login</a></p>`);
+            return;
+          }
+
+          setStatus("Logged in.");
+          setInfo(`
+            <p><strong>Email:</strong> ${user.email ?? "-"}</p>
+            <p><strong>Name:</strong> ${user.user_metadata?.full_name ?? "-"}</p>
+            <p><strong>Username:</strong> ${user.user_metadata?.username ?? "-"}</p>
+            <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
+          `);
+        } catch (err) {
+          console.error("Account render crash:", err);
+          setStatus("Account error.");
+          setInfo(`<p class="meta">Open the console to see details.</p>`);
+        }
+      }
+
+      renderAccount();
+
+      // Atualiza se o estado de auth mudar
+      supabase.auth.onAuthStateChange(() => {
+        renderAccount();
+      });
+
+      logoutBtn?.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/";
+      });
     });
   </script>
 </BaseLayout>
