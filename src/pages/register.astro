@@ -3,100 +3,137 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Register | Music Blog">
-  <section class="form-page">
-    <h1>Create account</h1>
-    <p class="meta">Register to publish posts and comment.</p>
+  <section class="page auth-page">
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+      <div class="posts-hero-overlay"></div>
+    </div>
 
-    <form id="registerForm" class="form-card" novalidate>
-      <label>
-        Full name
-        <input type="text" name="full_name" required />
-      </label>
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">Register</h1>
+        <p class="page-subtitle">Create an account to publish and comment.</p>
+      </div>
 
-      <label>
-        Username
-        <input type="text" name="username" required />
-      </label>
+      <a class="btn btn-ghost" href="/login">Login</a>
+    </header>
 
-      <label>
-        Favourite genre
-        <input type="text" name="favourite_genre" />
-      </label>
+    <div class="posts-shell">
+      <div id="alreadyLogged" class="glass-panel" style="display:none;">
+        <p class="meta" style="margin:0 0 10px 0;">You are already logged in.</p>
+        <div class="form-actions">
+          <a class="btn" href="/account">Go to account</a>
+          <button class="btn" id="logoutBtn" type="button">Logout</button>
+        </div>
+        <p id="logoutMsg" class="form-msg meta"></p>
+      </div>
 
-      <label>
-        Email
-        <input type="email" name="email" required />
-      </label>
+      <form id="registerForm" class="glass-panel" novalidate>
+        <label>
+          Full name
+          <input type="text" name="full_name" required />
+        </label>
 
-      <label>
-        Password
-        <input type="password" name="password" minlength="6" required />
-      </label>
+        <label>
+          Username
+          <input type="text" name="username" required />
+        </label>
 
-      <button class="btn" type="submit">Register</button>
+        <label>
+          Favourite genre
+          <input type="text" name="favourite_genre" />
+        </label>
 
-      <p id="msg" class="meta" style="margin-top:12px;"></p>
+        <label>
+          Email
+          <input type="email" name="email" required />
+        </label>
 
-      <p class="meta" style="margin-top:12px;">
-        Already have an account? <a href="/login">Login</a>
-      </p>
-    </form>
+        <label>
+          Password
+          <input type="password" name="password" minlength="6" required />
+        </label>
+
+        <div class="form-actions">
+          <button class="btn" type="submit">Register</button>
+          <p id="msg" class="form-msg meta"></p>
+        </div>
+
+        <p class="meta" style="margin-top:12px;">
+          Already have an account? <a href="/login">Login</a>
+        </p>
+      </form>
+    </div>
   </section>
 
-  <script>
-    import { supabase } from "../lib/supabaseClient";
+  <script type="module">
+    import { supabase } from "/src/lib/supabaseClient.ts";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const formEl = document.querySelector("#registerForm");
-      const msgEl = document.querySelector("#msg");
+    function setMsg(el, text, status) {
+      if (!el) return;
+      el.textContent = text || "";
+      if (status) el.setAttribute("data-status", status);
+      else el.removeAttribute("data-status");
+    }
 
-      const setMsg = (t) => msgEl && (msgEl.textContent = t);
+    function initRegister() {
+      const form = document.querySelector("#registerForm");
+      const msg = document.querySelector("#msg");
 
-      (async () => {
-        // ✅ If already logged in, go to account
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          window.location.href = "/account";
+      const alreadyLogged = document.querySelector("#alreadyLogged");
+      const logoutBtn = document.querySelector("#logoutBtn");
+      const logoutMsg = document.querySelector("#logoutMsg");
+
+      if (!(form instanceof HTMLFormElement)) return;
+
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          form.style.display = "none";
+          alreadyLogged.style.display = "block";
+        } else {
+          form.style.display = "block";
+          alreadyLogged.style.display = "none";
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        setMsg(msg, "Creating account...", "info");
+
+        const fd = new FormData(form);
+        const email = String(fd.get("email") || "").trim();
+        const password = String(fd.get("password") || "");
+        const full_name = String(fd.get("full_name") || "").trim();
+        const username = String(fd.get("username") || "").trim();
+        const favourite_genre = String(fd.get("favourite_genre") || "").trim();
+
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name, username, favourite_genre },
+          },
+        });
+
+        if (error) {
+          console.error(error);
+          setMsg(msg, "Error: " + error.message, "error");
           return;
         }
 
-        if (!(formEl instanceof HTMLFormElement)) return;
+        setMsg(msg, "Registered! Check your email to confirm.", "success");
+      });
 
-        formEl.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          setMsg("Creating account...");
+      logoutBtn?.addEventListener("click", async () => {
+        setMsg(logoutMsg, "Logging out...", "info");
+        await supabase.auth.signOut();
+        setMsg(logoutMsg, "Logged out.", "success");
+        setTimeout(() => (window.location.href = "/register"), 250);
+      });
+    }
 
-          const formData = new FormData(formEl);
-
-          const email = String(formData.get("email") || "");
-          const password = String(formData.get("password") || "");
-          const full_name = String(formData.get("full_name") || "");
-          const username = String(formData.get("username") || "");
-          const favourite_genre = String(formData.get("favourite_genre") || "");
-
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { full_name, username, favourite_genre },
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          });
-
-          if (error) {
-            setMsg("Error: " + error.message);
-            return;
-          }
-
-          if (!data.session) {
-            setMsg("Account created! Check your email to confirm, then login.");
-            setTimeout(() => (window.location.href = "/login"), 1500);
-            return;
-          }
-
-          window.location.href = "/account";
-        });
-      })();
-    });
+    document.addEventListener("astro:page-load", initRegister);
+    if (document.readyState !== "loading") initRegister();
   </script>
 </BaseLayout>

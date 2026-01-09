@@ -1,46 +1,89 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-
-// Simulação de proteção (depois Supabase):
-const isLoggedIn = false;
 ---
 
 <BaseLayout title="New Post | Music Blog">
-  <section class="form-page">
-    <h1>New post</h1>
+  <section class="page newpost-page">
+    <!-- background igual /posts -->
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+      <div class="posts-hero-overlay"></div>
+    </div>
 
-    {!isLoggedIn ? (
-      <div class="form-card">
-        <p class="meta">You must be logged in to create a post.</p>
-        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-          <a class="btn" href="/login">Go to login</a>
-          <a class="btn" href="/register">Create account</a>
-        </div>
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">Create New Post</h1>
+        <p class="page-subtitle">Write a new blog post.</p>
       </div>
-    ) : (
-      <form class="form-card" method="post">
+
+      <a class="btn btn-ghost" href="/posts">Back</a>
+    </header>
+
+    <div class="posts-shell">
+      <form id="postForm" class="glass-panel" novalidate>
         <label>
           Title
-          <input type="text" name="title" required />
-        </label>
-
-        <label>
-          Genre
-          <input type="text" name="genre" />
-        </label>
-
-        <label>
-          Artist
-          <input type="text" name="artist" />
+          <input type="text" name="title" required placeholder="e.g. Best gig I’ve seen this year" />
         </label>
 
         <label>
           Content
-          <textarea name="content" rows="8" required></textarea>
+          <textarea
+            name="content"
+            rows="10"
+            required
+            placeholder="Share your story, links, thoughts..."
+          ></textarea>
         </label>
 
-        <button class="btn" type="submit">Publish</button>
+        <div class="form-actions">
+          <button class="btn" type="submit">Publish</button>
+          <p id="msg" class="form-msg meta"></p>
+        </div>
       </form>
-    )}
+    </div>
   </section>
+
+  <script type="module">
+    import { supabase } from "/src/lib/supabaseClient.ts";
+
+    const formEl = document.querySelector("#postForm");
+    const msgEl = document.querySelector("#msg");
+    const setMsg = (t) => msgEl && (msgEl.textContent = t);
+
+    // guard: precisa estar logada
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      window.location.href = "/login";
+    } else if (formEl instanceof HTMLFormElement) {
+      formEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setMsg("Publishing...");
+
+        const formData = new FormData(formEl);
+        const title = String(formData.get("title") || "").trim();
+        const content = String(formData.get("content") || "").trim();
+
+        if (!title || !content) {
+          setMsg("Please fill in title and content.");
+          return;
+        }
+
+        const { error } = await supabase.from("posts").insert({
+          title,
+          content,
+          user_id: userData.user.id,
+        });
+
+        if (error) {
+          console.error(error);
+          setMsg("Error: " + error.message);
+          return;
+        }
+
+        setMsg("Post published! Redirecting...");
+        setTimeout(() => (window.location.href = "/posts"), 800);
+      });
+    }
+  </script>
 </BaseLayout>

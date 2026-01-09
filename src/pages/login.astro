@@ -3,78 +3,115 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Login | Music Blog">
-  <section class="form-page">
-    <h1>Login</h1>
-    <p class="meta">Access your account to create and manage posts.</p>
+  <section class="page auth-page">
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+      <div class="posts-hero-overlay"></div>
+    </div>
 
-    <form id="loginForm" class="form-card" novalidate>
-      <label>
-        Email
-        <input type="email" name="email" required />
-      </label>
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">Login</h1>
+        <p class="page-subtitle">Access your account to manage posts.</p>
+      </div>
 
-      <label>
-        Password
-        <input type="password" name="password" required />
-      </label>
+      <a class="btn btn-ghost" href="/register">Register</a>
+    </header>
 
-      <button class="btn" type="submit">Login</button>
+    <div class="posts-shell">
+      <div id="alreadyLogged" class="glass-panel" style="display:none;">
+        <p class="meta" style="margin:0 0 10px 0;">You are already logged in.</p>
+        <div class="form-actions">
+          <a class="btn" href="/account">Go to account</a>
+          <button class="btn" id="logoutBtn" type="button">Logout</button>
+        </div>
+        <p id="logoutMsg" class="form-msg meta"></p>
+      </div>
 
-      <p id="msg" class="meta" style="margin-top:12px;"></p>
+      <form id="loginForm" class="glass-panel" novalidate>
+        <label>
+          Email
+          <input type="email" name="email" required />
+        </label>
 
-      <p class="meta" style="margin-top:12px;">
-        Don't have an account? <a href="/register">Register</a>
-      </p>
-    </form>
+        <label>
+          Password
+          <input type="password" name="password" required />
+        </label>
+
+        <div class="form-actions">
+          <button class="btn" type="submit">Login</button>
+          <p id="msg" class="form-msg meta"></p>
+        </div>
+
+        <p class="meta" style="margin-top:12px;">
+          Don’t have an account? <a href="/register">Register</a>
+        </p>
+      </form>
+    </div>
   </section>
 
-  <script>
-    import { supabase } from "../lib/supabaseClient";
+  <script type="module">
+    import { supabase } from "/src/lib/supabaseClient.ts";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("✅ login script loaded");
+    function setMsg(el, text, status) {
+      if (!el) return;
+      el.textContent = text || "";
+      if (status) el.setAttribute("data-status", status);
+      else el.removeAttribute("data-status");
+    }
 
-      const formEl = document.querySelector("#loginForm");
-      const msgEl = document.querySelector("#msg");
+    function initLogin() {
+      const form = document.querySelector("#loginForm");
+      const msg = document.querySelector("#msg");
 
-      const setMsg = (t) => msgEl && (msgEl.textContent = t);
+      const alreadyLogged = document.querySelector("#alreadyLogged");
+      const logoutBtn = document.querySelector("#logoutBtn");
+      const logoutMsg = document.querySelector("#logoutMsg");
 
-      (async () => {
-        // ✅ If already logged in, go to account
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          window.location.href = "/account";
+      if (!(form instanceof HTMLFormElement)) return;
+
+      // checa sessão (mas não redireciona!)
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          form.style.display = "none";
+          alreadyLogged.style.display = "block";
+        } else {
+          form.style.display = "block";
+          alreadyLogged.style.display = "none";
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        setMsg(msg, "Logging in...", "info");
+
+        const fd = new FormData(form);
+        const email = String(fd.get("email") || "").trim();
+        const password = String(fd.get("password") || "");
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          console.error(error);
+          setMsg(msg, "Error: " + error.message, "error");
           return;
         }
 
-        if (!(formEl instanceof HTMLFormElement)) return;
+        setMsg(msg, "Success! Redirecting...", "success");
+        setTimeout(() => (window.location.href = "/account"), 400);
+      });
 
-        formEl.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          setMsg("Logging in...");
+      logoutBtn?.addEventListener("click", async () => {
+        setMsg(logoutMsg, "Logging out...", "info");
+        await supabase.auth.signOut();
+        setMsg(logoutMsg, "Logged out.", "success");
+        setTimeout(() => (window.location.href = "/login"), 250);
+      });
+    }
 
-          const formData = new FormData(formEl);
-          const email = String(formData.get("email") || "");
-          const password = String(formData.get("password") || "");
-
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (error) {
-            setMsg("Error: " + error.message);
-            return;
-          }
-
-          if (!data.session) {
-            setMsg("Login succeeded but no session found.");
-            return;
-          }
-
-          window.location.href = "/account";
-        });
-      })();
-    });
+    document.addEventListener("astro:page-load", initLogin);
+    if (document.readyState !== "loading") initLogin();
   </script>
 </BaseLayout>

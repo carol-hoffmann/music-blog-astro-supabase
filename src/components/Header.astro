@@ -1,76 +1,66 @@
 ---
-const { pathname } = Astro.url;
+const navLinks = [
+  { href: "/", label: "Home", auth: "any" },
+  { href: "/posts", label: "Posts", auth: "any" },
+  { href: "/posts/new", label: "New post", auth: "in" },
+  { href: "/account", label: "Account", auth: "in" },
+  { href: "/login", label: "Login", auth: "out" },
+  { href: "/register", label: "Register", auth: "out" },
+];
 
-// Por enquanto é fake (até Supabase Auth):
-const isLoggedIn = false;
+const pathname = Astro.url.pathname;
+
+function isActive(href) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+
+  // página exata
+  if (pathname === href) {
+    return true;
+  }
+
+  // subpáginas SOMENTE se não houver um match mais específico
+  return (
+    pathname.startsWith(href + "/") &&
+    !navLinks.some(
+      (l) => l.href !== href && pathname === l.href
+    )
+  );
+}
+
 ---
 
-<header class="hero-header header-dark">
-  <div class="header-left">
-    <a href="/" class="site-title">
-      MUSIC BLOG · ASTRO + SUPABASE
-    </a>
-  </div>
+<header class="site-header">
+  <nav class="hero-header header-dark">
+    <a class="site-title" href="/">SOUNDTALK | Talk Music. Share Sound.</a>
 
-  <div class="header-center">
-    <a href="/" class="header-logo-link" aria-label="Go to home">
-      <!-- Se você quiser reutilizar um logo depois, é só colocar aqui -->
-      <!-- <img src="/images/logo.png" alt="Site Logo" class="header-logo" /> -->
-      <span style="color:#f4efe8; font-weight:900; letter-spacing:0.2em; font-size:12px;">
-        MB
-      </span>
-    </a>
-  </div>
+    <div class="header-center">
+      <a class="header-logo-link" href="/" aria-label="Home">
+        <img class="header-logo" src="/images/logo.png" alt="Music Blog logo" />
+      </a>
+    </div>
 
-  <nav class="nav_bar header-right">
-    <ul>
-      <li>
-        <a href="/" class={`nav-link ${pathname === "/" ? "nav-link--active" : ""}`}>
-          HOME
-        </a>
-      </li>
-
-      <li>
-        <a href="/posts" class={`nav-link ${pathname.startsWith("/posts") ? "nav-link--active" : ""}`}>
-          POSTS
-        </a>
-      </li>
-
-      <li>
-        <a href="/posts/new" class={`nav-link ${pathname.startsWith("/posts/new") ? "nav-link--active" : ""}`}>
-          NEW POST
-        </a>
-      </li>
-
-      {isLoggedIn ? (
-        <li>
-          <a href="/account" class={`nav-link ${pathname.startsWith("/account") ? "nav-link--active" : ""}`}>
-            ACCOUNT
-          </a>
-        </li>
-      ) : (
-        <>
-          <li>
-            <a href="/login" class={`nav-link ${pathname.startsWith("/login") ? "nav-link--active" : ""}`}>
-              LOGIN
+    <div class="header-right">
+      <div class="nav-links">
+        {navLinks.map((l) => {
+          const active = isActive(l.href);
+          return (
+            <a
+              href={l.href}
+              data-auth={l.auth}
+              aria-current={active ? "page" : undefined}
+              class={active ? "nav-link nav-link--active" : "nav-link"}
+            >
+              {l.label}
             </a>
-          </li>
-
-          <li>
-            <a href="/register" class={`nav-link ${pathname.startsWith("/register") ? "nav-link--active" : ""}`}>
-              REGISTER
-            </a>
-          </li>
-
-          <li>
-            <a href="/account" class={`nav-link ${pathname.startsWith("/account") ? "nav-link--active" : ""}`}>
-              ACCOUNT
-            </a>
-          </li>
-        </>
-      )}
-    </ul>
+          );
+        })}
+      </div>
+    </div>
   </nav>
-</header>
 
-<hr class="hero-line" />
+  <hr class="hero-line" />
+
+  <!-- mantém SEU script de auth aqui embaixo, sem mudar -->
+</header>

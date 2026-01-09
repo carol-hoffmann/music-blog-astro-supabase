@@ -3,18 +3,56 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Account | Music Blog">
-  <section class="form-page">
-    <h1>Account</h1>
-    <p class="meta">Manage your profile details.</p>
+  <section class="page account-page">
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+      <div class="posts-hero-overlay"></div>
+    </div>
 
-    <div class="form-card">
-      <p id="status" class="meta">Checking session...</p>
-      <div id="info"></div>
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">Account</h1>
+        <p class="page-subtitle">View and update your profile details.</p>
+      </div>
 
-      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn" href="/posts/new">Create new post</a>
-        <button class="btn" id="logoutBtn" type="button">Logout</button>
-        <button class="btn" id="clearBtn" type="button">Clear local session</button>
+      <a class="btn btn-ghost" href="/posts">Posts</a>
+    </header>
+
+    <div class="posts-shell">
+      <div class="glass-panel">
+        <p id="status" class="meta is-loading">Checking session...</p>
+
+        <form id="profileForm" style="display:none; margin-top:14px;" novalidate>
+          <p class="meta" style="margin-bottom:10px;">
+            Logged in as <strong id="email"></strong>
+          </p>
+
+          <label>
+            Full name
+            <input type="text" name="full_name" id="full_name" required disabled />
+          </label>
+
+          <label>
+            Username
+            <input type="text" name="username" id="username" required disabled />
+          </label>
+
+          <label>
+            Favourite genre
+            <input type="text" name="favourite_genre" id="favourite_genre" required disabled />
+          </label>
+
+          <div class="form-actions" style="margin-top:14px; align-items:center;">
+            <button class="btn" id="editBtn" type="button">Edit profile</button>
+            <button class="btn" id="saveBtn" type="submit" disabled>Save changes</button>
+            <button class="btn btn-ghost" id="logoutBtn" type="button">Logout</button>
+            <p id="msg" class="form-msg meta"></p>
+          </div>
+        </form>
+
+        <p id="loginHint" class="meta hint" style="display:none; margin-top:12px;">
+          You are not logged in. <a href="/login">Login</a>
+        </p>
       </div>
     </div>
   </section>
@@ -23,65 +61,140 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     import { supabase } from "../lib/supabaseClient";
 
     document.addEventListener("DOMContentLoaded", () => {
-      const statusEl = document.querySelector("#status");
-      const infoEl = document.querySelector("#info");
+      const status = document.querySelector("#status");
+      const loginHint = document.querySelector("#loginHint");
+      const form = document.querySelector("#profileForm");
+      const msg = document.querySelector("#msg");
+
+      const emailEl = document.querySelector("#email");
+      const fullNameEl = document.querySelector("#full_name");
+      const usernameEl = document.querySelector("#username");
+      const favEl = document.querySelector("#favourite_genre");
+
+      const editBtn = document.querySelector("#editBtn");
+      const saveBtn = document.querySelector("#saveBtn");
       const logoutBtn = document.querySelector("#logoutBtn");
-      const clearBtn = document.querySelector("#clearBtn");
 
-      const setStatus = (t) => statusEl && (statusEl.textContent = t);
-      const setInfo = (h) => infoEl && (infoEl.innerHTML = h);
+      const setStatus = (t) => status && (status.textContent = t);
+      const setMsg = (t) => msg && (msg.textContent = t || "");
 
-      async function renderAccount() {
-        try {
-          setStatus("Checking session...");
+      let userId = null;
+      let editMode = false;
 
-          // Usa getUser (mais confiável em produção)
-          const { data, error } = await supabase.auth.getUser();
+      function setEditing(on) {
+        editMode = on;
+        if (fullNameEl) fullNameEl.disabled = !on;
+        if (usernameEl) usernameEl.disabled = !on;
+        if (favEl) favEl.disabled = !on;
 
-          if (error || !data?.user) {
-            setStatus("You are not logged in.");
-            setInfo(`<p><a class="btn" href="/login">Go to login</a></p>`);
-            return;
-          }
+        if (saveBtn) saveBtn.disabled = !on;
 
-          const user = data.user;
-
-          setStatus("Logged in.");
-          setInfo(`
-            <p><strong>Email:</strong> ${user.email ?? "-"}</p>
-            <p><strong>Name:</strong> ${user.user_metadata?.full_name ?? "-"}</p>
-            <p><strong>Username:</strong> ${user.user_metadata?.username ?? "-"}</p>
-            <p><strong>Favourite genre:</strong> ${user.user_metadata?.favourite_genre ?? "-"}</p>
-          `);
-        } catch (err) {
-          console.error("Account error:", err);
-          setStatus("Account error.");
-          setInfo(`<p class="meta">Open DevTools → Console for details.</p>`);
-        }
+        if (editBtn) editBtn.textContent = on ? "Cancel" : "Edit profile";
+        setMsg("");
       }
 
-      renderAccount();
+      (async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) console.error(error);
 
-      supabase.auth.onAuthStateChange(() => {
-        renderAccount();
-      });
+        status?.classList.remove("is-loading");
 
-      logoutBtn?.addEventListener("click", async () => {
-        try {
-          await supabase.auth.signOut();
-        } catch {}
-        window.location.href = "/";
-      });
-
-      clearBtn?.addEventListener("click", () => {
-        // Remove qualquer token do Supabase salvo no browser
-        for (const key of Object.keys(localStorage)) {
-          if (key.startsWith("sb-") && key.includes("-auth-token")) {
-            localStorage.removeItem(key);
-          }
+        const session = data?.session;
+        if (!session) {
+          setStatus("");
+          if (loginHint) loginHint.style.display = "block";
+          return;
         }
-        window.location.href = "/login";
-      });
+
+        const user = session.user;
+        userId = user.id;
+
+        if (emailEl) emailEl.textContent = user.email || "";
+
+        setStatus("Loading profile...");
+
+        const { data: profile, error: profErr } = await supabase
+          .from("profiles")
+          .select("full_name, username, favourite_genre")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (profErr) {
+          console.error(profErr);
+          setMsg("Error loading profile: " + profErr.message);
+        }
+
+        if (fullNameEl) fullNameEl.value = profile?.full_name ?? "";
+        if (usernameEl) usernameEl.value = profile?.username ?? "";
+        if (favEl) favEl.value = profile?.favourite_genre ?? "";
+
+        setStatus("");
+        if (form) form.style.display = "block";
+
+        // começa em modo leitura
+        setEditing(false);
+
+        // Edit/Cancel
+        editBtn?.addEventListener("click", () => {
+          if (editMode) {
+            // cancel: recarrega valores do banco (pra desfazer)
+            (async () => {
+              setStatus("Reverting...");
+              const { data: p2 } = await supabase
+                .from("profiles")
+                .select("full_name, username, favourite_genre")
+                .eq("id", userId)
+                .maybeSingle();
+              if (fullNameEl) fullNameEl.value = p2?.full_name ?? "";
+              if (usernameEl) usernameEl.value = p2?.username ?? "";
+              if (favEl) favEl.value = p2?.favourite_genre ?? "";
+              setStatus("");
+              setEditing(false);
+            })();
+          } else {
+            setEditing(true);
+          }
+        });
+
+        // Save
+        if (form instanceof HTMLFormElement) {
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!editMode) return;
+
+            setMsg("Saving...");
+
+            const full_name = String(fullNameEl?.value || "").trim();
+            const username = String(usernameEl?.value || "").trim();
+            const favourite_genre = String(favEl?.value || "").trim();
+
+            const { error: upErr } = await supabase
+              .from("profiles")
+              .upsert(
+                { id: userId, full_name, username, favourite_genre },
+                { onConflict: "id" }
+              );
+
+            if (upErr) {
+              console.error(upErr);
+              setMsg("Error: " + upErr.message);
+              return;
+            }
+
+            setMsg("Saved!");
+            setEditing(false);
+            setTimeout(() => setMsg(""), 900);
+          });
+        }
+
+        // Logout
+        logoutBtn?.addEventListener("click", async () => {
+          await supabase.auth.signOut();
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.href = "/login";
+        });
+      })();
     });
   </script>
 </BaseLayout>

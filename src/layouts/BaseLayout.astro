@@ -20,11 +20,18 @@ const { title = "Music Blog" } = Astro.props;
     />
   </head>
 
+  <slot name="scripts" />
+
+
   <body>
     <Header />
     <main>
       <slot />
     </main>
+
+    <!-- Scripts das páginas -->
+    <slot name="scripts" />
+
     <Footer />
   </body>
 </html>

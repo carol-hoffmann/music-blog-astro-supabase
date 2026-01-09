@@ -1,18 +1,79 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import PostCard from "../components/PostCard.astro";
-import { posts } from "../lib/posts";
-
-const latestFive = [...posts]
-  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  .slice(0, 5);
 ---
 
-<BaseLayout title="Music Blog | Home">
-  <h1>Latest posts</h1>
-  <p class="meta">The 5 most recent posts in chronological order.</p>
+<BaseLayout
+  title="Home · SoundTalk"
+  description="Music Blog is a community-driven platform where music lovers share experiences, concert stories, and creative journeys."
+>
+  <main class="home-hero">
+    <!-- IMAGEM DE FUNDO -->
+    <div class="home-hero-image-layer">
+      <img
+        id="home-hero-image"
+        src="/images/hero1.jpg"
+        alt="Music Blog background"
+        class="home-hero-image fade-in"
+      />
+    </div>
 
-  <div style="margin-top:16px; display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-  {latestFive.map((post) => <PostCard post={post} />)}
-  </div>
+    <!-- OVERLAY -->
+    <div class="home-hero-overlay"></div>
+
+    <!-- CONTEÚDO -->
+    <div class="home-hero-content">
+      <h1 class="home-hero-title">SoundTalk</h1>
+
+      <p class="home-hero-text">
+        Music Blog is a collaborative space created for music lovers to share
+        experiences, stories, and inspirations. Whether it’s a concert that
+        changed your life, a new artist you’ve just discovered, or a link to
+        your own music, this blog exists to celebrate music in all its forms.
+        <br /><br />
+        Create an account, publish your own posts, comment on others, and become
+        part of a growing community connected through sound.
+      </p>
+    </div>
+
+   <script type="module">
+  const imageElement = document.querySelector("#home-hero-image");
+
+  const heroImages = [
+    "/images/hero1.jpg",
+    "/images/hero2.jpg",
+    "/images/hero4.jpg",
+    "/images/hero5.jpg",
+    "/images/hero6.jpg",
+    "/images/hero7.jpg",
+    "/images/hero8.jpg",
+    "/images/hero9.jpg",
+    "/images/hero10.jpg",
+    "/images/hero11.jpg",
+  ];
+
+  let currentIndex = 0;
+
+  function showNextImage() {
+    if (!imageElement) return;
+
+    // fade OUT
+    imageElement.classList.add("fade-out");
+
+    setTimeout(() => {
+      currentIndex = (currentIndex + 1) % heroImages.length;
+      imageElement.src = heroImages[currentIndex];
+
+      imageElement.onload = () => {
+        // fade IN
+        imageElement.classList.remove("fade-out");
+      };
+    }, 350);
+  }
+
+  if (imageElement) {
+    setInterval(showNextImage, 4500);
+  }
+</script>
+
+  </main>
 </BaseLayout>

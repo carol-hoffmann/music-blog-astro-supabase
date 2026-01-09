@@ -1,0 +1,10 @@
+---
+const { post } = Astro.props;
+const date = new Date(post.created_at).toLocaleDateString();
+---
+
+<article class="post-card">
+  <h3>{post.title}</h3>
+  <p class="meta">{date}</p>
+  <p>{post.content}</p>
+</article>

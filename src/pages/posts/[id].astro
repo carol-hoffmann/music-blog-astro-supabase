@@ -1,0 +1,223 @@
+---
+export const prerender = false;
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Post | Music Blog">
+  <section class="page post-page">
+    <!-- Background igual /posts (opcional: se você quiser usar a mesma imagem aqui também) -->
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+
+      <div class="posts-hero-overlay"></div>
+    </div>
+
+    <div class="post-shell">
+      <!-- POST -->
+      <article class="post-panel">
+        <p class="meta post-back">
+          <a href="/posts">← Back to posts</a>
+        </p>
+
+        <h1 id="title" class="post-title">Loading...</h1>
+        <p id="date" class="meta post-date"></p>
+
+        <div id="content" class="post-content"></div>
+
+        <div id="ownerActions" class="post-actions" style="display:none;">
+          <a class="btn" id="editBtn" href="#">Edit</a>
+          <button class="btn" id="deleteBtn" type="button">Delete</button>
+        </div>
+
+        <p id="msg" class="meta post-msg"></p>
+      </article>
+
+      <!-- COMMENTS -->
+      <section class="post-panel">
+        <div class="comments-head">
+          <h2 class="comments-title">Comments</h2>
+        </div>
+
+        <div id="commentsWrap" class="comments-wrap">
+          <p id="commentsMsg" class="meta">Loading comments...</p>
+        </div>
+
+        <div id="commentBox" class="comment-box" style="display:none;">
+          <form id="commentForm" class="comment-form" novalidate>
+            <label>
+              Add a comment
+              <textarea name="content" rows="3" required></textarea>
+            </label>
+
+            <div class="comment-actions">
+              <button class="btn" type="submit">Post comment</button>
+              <p id="commentFormMsg" class="meta"></p>
+            </div>
+          </form>
+        </div>
+
+        <p id="commentLoginMsg" class="meta" style="display:none;">
+          You must be logged in to comment. <a href="/login">Login</a>
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <script type="module">
+    import { supabase } from "/src/lib/supabaseClient.ts";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const id = window.location.pathname.split("/").pop();
+
+      const titleEl = document.querySelector("#title");
+      const dateEl = document.querySelector("#date");
+      const contentEl = document.querySelector("#content");
+      const msgEl = document.querySelector("#msg");
+      const ownerActions = document.querySelector("#ownerActions");
+      const editBtn = document.querySelector("#editBtn");
+      const deleteBtn = document.querySelector("#deleteBtn");
+
+      const commentsWrap = document.querySelector("#commentsWrap");
+      const commentsMsg = document.querySelector("#commentsMsg");
+      const commentBox = document.querySelector("#commentBox");
+      const commentLoginMsg = document.querySelector("#commentLoginMsg");
+      const commentForm = document.querySelector("#commentForm");
+      const commentFormMsg = document.querySelector("#commentFormMsg");
+
+      const setMsg = (t) => msgEl && (msgEl.textContent = t);
+      const setCommentsMsg = (t) => commentsMsg && (commentsMsg.textContent = t);
+      const setCommentFormMsg = (t) => commentFormMsg && (commentFormMsg.textContent = t);
+
+      if (!id) {
+        setMsg("Missing post id.");
+        return;
+      }
+
+      const { data: post, error } = await supabase
+        .from("posts")
+        .select("id, title, content, created_at, user_id")
+        .eq("id", id)
+        .single();
+
+      if (error || !post) {
+        console.error(error);
+        setMsg("Post not found.");
+        return;
+      }
+
+      titleEl.textContent = post.title;
+      dateEl.textContent = new Date(post.created_at).toLocaleString();
+      contentEl.textContent = post.content;
+
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user ?? null;
+
+      // ações do dono
+      if (user && user.id === post.user_id) {
+        ownerActions.style.display = "flex";
+        editBtn.href = `/posts/edit/${post.id}`;
+      }
+
+      deleteBtn?.addEventListener("click", async () => {
+        if (!confirm("Delete this post? This cannot be undone.")) return;
+
+        setMsg("Deleting...");
+
+        const { error: delError } = await supabase.from("posts").delete().eq("id", post.id);
+
+        if (delError) {
+          console.error(delError);
+          setMsg("Error: " + delError.message);
+          return;
+        }
+
+        window.location.href = "/posts";
+      });
+
+      // mostrar form de comment
+      if (user) {
+        commentBox.style.display = "block";
+        commentLoginMsg.style.display = "none";
+      } else {
+        commentBox.style.display = "none";
+        commentLoginMsg.style.display = "block";
+      }
+
+      async function loadComments() {
+        setCommentsMsg("Loading comments...");
+
+        const { data: comments, error: cErr } = await supabase
+          .from("comments")
+          .select("id, content, created_at, user_id")
+          .eq("post_id", post.id)
+          .order("created_at", { ascending: true });
+
+        if (cErr) {
+          console.error(cErr);
+          setCommentsMsg("Error loading comments: " + cErr.message);
+          return;
+        }
+
+        if (!comments || comments.length === 0) {
+          setCommentsMsg("No comments yet.");
+          return;
+        }
+
+        commentsMsg?.remove();
+
+        const html = comments
+          .map((c) => {
+            const date = new Date(c.created_at).toLocaleString();
+            const author = c.user_id === user?.id ? "You" : c.user_id.slice(0, 8);
+
+            return `
+              <div class="comment-item">
+                <div class="comment-meta">
+                  <strong>${author}</strong> · ${date}
+                </div>
+                <div class="comment-text">${c.content}</div>
+              </div>
+            `;
+          })
+          .join("");
+
+        commentsWrap.innerHTML = html;
+      }
+
+      await loadComments();
+
+      if (user && commentForm instanceof HTMLFormElement) {
+        commentForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setCommentFormMsg("Posting...");
+
+          const fd = new FormData(commentForm);
+          const content = String(fd.get("content") || "").trim();
+
+          if (!content) {
+            setCommentFormMsg("Please write a comment.");
+            return;
+          }
+
+          const { error: insErr } = await supabase.from("comments").insert({
+            post_id: post.id,
+            user_id: user.id,
+            content,
+          });
+
+          if (insErr) {
+            console.error(insErr);
+            setCommentFormMsg("Error: " + insErr.message);
+            return;
+          }
+
+          commentForm.reset();
+          setCommentFormMsg("Posted!");
+          setTimeout(() => setCommentFormMsg(""), 900);
+
+          await loadComments();
+        });
+      }
+    });
+  </script>
+</BaseLayout>

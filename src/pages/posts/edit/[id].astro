@@ -1,0 +1,136 @@
+---
+export const prerender = false;
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Edit Post | Music Blog">
+  <section class="page editpost-page">
+    <!-- background igual /posts -->
+    <div class="posts-hero-bg" aria-hidden="true">
+      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+
+      <div class="posts-hero-overlay"></div>
+    </div>
+
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">Edit Post</h1>
+        <p class="page-subtitle">Update your post content.</p>
+      </div>
+
+      <a class="btn btn-ghost" id="backBtn" href="/posts">Back</a>
+    </header>
+
+    <div class="posts-shell">
+      <form id="editForm" class="glass-panel" novalidate>
+        <label>
+          Title
+          <input id="title" type="text" name="title" required />
+        </label>
+
+        <label>
+          Content
+          <textarea id="content" name="content" rows="10" required></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button class="btn" type="submit">Save changes</button>
+          <p id="msg" class="form-msg meta"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script type="module">
+    import { supabase } from "../../../lib/supabaseClient";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const id = window.location.pathname.split("/").pop();
+
+      const formEl = document.querySelector("#editForm");
+      const msgEl = document.querySelector("#msg");
+      const titleInput = document.querySelector("#title");
+      const contentInput = document.querySelector("#content");
+      const backBtn = document.querySelector("#backBtn");
+
+      const setMsg = (t) => msgEl && (msgEl.textContent = t);
+
+      // Must be logged in
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      const user = userData?.user ?? null;
+
+      if (userErr || !user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!id) {
+        setMsg("Missing post id.");
+        return;
+      }
+
+      // Load post
+      setMsg("Loading post...");
+
+      const { data: post, error } = await supabase
+        .from("posts")
+        .select("id, title, content, user_id")
+        .eq("id", id)
+        .single();
+
+      if (error || !post) {
+        console.error(error);
+        setMsg("Post not found.");
+        return;
+      }
+
+      // Only author can edit (UI guard — RLS also protects)
+      if (user.id !== post.user_id) {
+        setMsg("You are not allowed to edit this post.");
+        // volta pro post para não ficar preso na tela
+        setTimeout(() => (window.location.href = `/posts/${post.id}`), 900);
+        return;
+      }
+
+      // preencher campos
+      titleInput.value = post.title ?? "";
+      contentInput.value = post.content ?? "";
+
+      // back vai pro post
+      if (backBtn) backBtn.href = `/posts/${post.id}`;
+
+      setMsg("");
+
+      if (!(formEl instanceof HTMLFormElement)) return;
+
+      formEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setMsg("Saving...");
+
+        const title = String(titleInput.value || "").trim();
+        const content = String(contentInput.value || "").trim();
+
+        if (!title || !content) {
+          setMsg("Please fill in title and content.");
+          return;
+        }
+
+        const { error: upError } = await supabase
+          .from("posts")
+          .update({ title, content, updated_at: new Date().toISOString() })
+          .eq("id", post.id);
+
+        if (upError) {
+          console.error(upError);
+          setMsg("Error: " + upError.message);
+          return;
+        }
+
+        setMsg("Saved! Redirecting...");
+        setTimeout(() => {
+          window.location.href = `/posts/${post.id}`;
+        }, 800);
+      });
+    });
+  </script>
+</BaseLayout>
