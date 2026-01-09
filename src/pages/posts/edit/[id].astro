@@ -4,11 +4,9 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Edit Post | Music Blog">
-  <section class="page editpost-page">
-    <!-- background igual /posts -->
+  <section class="page newpost-page">
     <div class="posts-hero-bg" aria-hidden="true">
       <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
-
       <div class="posts-hero-overlay"></div>
     </div>
 
@@ -18,7 +16,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
         <p class="page-subtitle">Update your post content.</p>
       </div>
 
-      <a class="btn btn-ghost" id="backBtn" href="/posts">Back</a>
+      <a class="btn btn-ghost" href="/posts">Back</a>
     </header>
 
     <div class="posts-shell">
@@ -42,7 +40,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
   </section>
 
   <script type="module">
-    import { supabase } from "../../../lib/supabaseClient";
+    import { supabase } from "/src/lib/supabaseClient.ts";
 
     document.addEventListener("DOMContentLoaded", async () => {
       const id = window.location.pathname.split("/").pop();
@@ -51,15 +49,16 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
       const msgEl = document.querySelector("#msg");
       const titleInput = document.querySelector("#title");
       const contentInput = document.querySelector("#content");
-      const backBtn = document.querySelector("#backBtn");
 
-      const setMsg = (t) => msgEl && (msgEl.textContent = t);
+      const setMsg = (t) => {
+        if (msgEl) msgEl.textContent = t || "";
+      };
 
-      // Must be logged in
+      if (!(formEl instanceof HTMLFormElement)) return;
+
+      // precisa estar logada
       const { data: userData, error: userErr } = await supabase.auth.getUser();
-      const user = userData?.user ?? null;
-
-      if (userErr || !user) {
+      if (userErr || !userData?.user) {
         window.location.href = "/login";
         return;
       }
@@ -69,7 +68,6 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
         return;
       }
 
-      // Load post
       setMsg("Loading post...");
 
       const { data: post, error } = await supabase
@@ -84,28 +82,18 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
         return;
       }
 
-      // Only author can edit (UI guard — RLS also protects)
-      if (user.id !== post.user_id) {
+      // só o autor pode editar (RLS também protege)
+      if (userData.user.id !== post.user_id) {
         setMsg("You are not allowed to edit this post.");
-        // volta pro post para não ficar preso na tela
-        setTimeout(() => (window.location.href = `/posts/${post.id}`), 900);
         return;
       }
 
-      // preencher campos
       titleInput.value = post.title ?? "";
       contentInput.value = post.content ?? "";
-
-      // back vai pro post
-      if (backBtn) backBtn.href = `/posts/${post.id}`;
-
       setMsg("");
-
-      if (!(formEl instanceof HTMLFormElement)) return;
 
       formEl.addEventListener("submit", async (e) => {
         e.preventDefault();
-        setMsg("Saving...");
 
         const title = String(titleInput.value || "").trim();
         const content = String(contentInput.value || "").trim();
@@ -115,6 +103,9 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
           return;
         }
 
+        setMsg("Saving...");
+
+        // ⚠️ se sua tabela não tem updated_at, remova essa linha
         const { error: upError } = await supabase
           .from("posts")
           .update({ title, content, updated_at: new Date().toISOString() })
@@ -129,7 +120,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
         setMsg("Saved! Redirecting...");
         setTimeout(() => {
           window.location.href = `/posts/${post.id}`;
-        }, 800);
+        }, 700);
       });
     });
   </script>
