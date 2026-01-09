@@ -60,7 +60,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <script>
     import { supabase } from "../lib/supabaseClient";
 
-
     document.addEventListener("DOMContentLoaded", () => {
       const status = document.querySelector("#status");
       const loginHint = document.querySelector("#loginHint");
@@ -132,13 +131,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         setStatus("");
         if (form) form.style.display = "block";
 
-        // começa em modo leitura
         setEditing(false);
 
-        // Edit/Cancel
         editBtn?.addEventListener("click", () => {
           if (editMode) {
-            // cancel: recarrega valores do banco (pra desfazer)
             (async () => {
               setStatus("Reverting...");
               const { data: p2 } = await supabase
@@ -157,7 +153,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           }
         });
 
-        // Save
         if (form instanceof HTMLFormElement) {
           form.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -188,7 +183,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           });
         }
 
-        // Logout
         logoutBtn?.addEventListener("click", async () => {
           await supabase.auth.signOut();
           localStorage.clear();

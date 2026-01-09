@@ -15,12 +15,10 @@ function isActive(href) {
     return pathname === "/";
   }
 
-  // página exata
   if (pathname === href) {
     return true;
   }
 
-  // subpáginas SOMENTE se não houver um match mais específico
   return (
     pathname.startsWith(href + "/") &&
     !navLinks.some(
@@ -62,5 +60,4 @@ function isActive(href) {
 
   <hr class="hero-line" />
 
-  <!-- mantém SEU script de auth aqui embaixo, sem mudar -->
 </header>

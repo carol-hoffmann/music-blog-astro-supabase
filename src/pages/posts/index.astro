@@ -4,7 +4,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <BaseLayout title="Posts | Music Blog">
   <section class="page posts-page">
-    <!-- BACKGROUND -->
     <div class="posts-hero-bg" aria-hidden="true">
       <img
         class="posts-hero-img"
@@ -31,7 +30,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
   <script>
     import { supabase } from "../../lib/supabaseClient";
-
 
     document.addEventListener("DOMContentLoaded", async () => {
       const wrap = document.querySelector("#postsWrap");

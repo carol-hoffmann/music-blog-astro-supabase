@@ -4,7 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <BaseLayout title="New Post | Music Blog">
   <section class="page newpost-page">
-    <!-- background igual /posts -->
+  
     <div class="posts-hero-bg" aria-hidden="true">
       <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
       <div class="posts-hero-overlay"></div>
@@ -48,11 +48,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     import { supabase } from "../../lib/supabaseClient";
 
 
+
     const formEl = document.querySelector("#postForm");
     const msgEl = document.querySelector("#msg");
     const setMsg = (t) => msgEl && (msgEl.textContent = t);
 
-    // guard: precisa estar logada
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
       window.location.href = "/login";

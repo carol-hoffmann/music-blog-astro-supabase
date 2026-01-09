@@ -54,7 +54,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <script type="module">
     import { supabase } from "../lib/supabaseClient";
 
-
     function setMsg(el, text, status) {
       if (!el) return;
       el.textContent = text || "";
@@ -72,7 +71,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       if (!(form instanceof HTMLFormElement)) return;
 
-      // checa sessão (mas não redireciona!)
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
           form.style.display = "none";
