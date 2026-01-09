@@ -45,7 +45,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   </section>
 
   <script type="module">
-    import { supabase } from "/src/lib/supabaseClient.ts";
+    import { supabase } from "../../lib/supabaseClient";
+
 
     const formEl = document.querySelector("#postForm");
     const msgEl = document.querySelector("#msg");

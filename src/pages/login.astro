@@ -52,7 +52,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </section>
 
   <script type="module">
-    import { supabase } from "/src/lib/supabaseClient.ts";
+    import { supabase } from "../lib/supabaseClient";
+
 
     function setMsg(el, text, status) {
       if (!el) return;
