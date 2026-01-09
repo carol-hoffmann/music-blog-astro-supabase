@@ -11,20 +11,20 @@ const navLinks = [
 const pathname = Astro.url.pathname;
 
 function isActive(href) {
-  if (href === "/") {
-    return pathname === "/";
+  if (href === "/") return pathname === "/";
+
+  if (href === "/posts") {
+    const isPostsRoot = pathname === "/posts";
+    const isPostDetail =
+      pathname.startsWith("/posts/") &&
+      !pathname.startsWith("/posts/new") &&
+      !pathname.startsWith("/posts/edit") &&
+      pathname.split("/").length === 3; 
+
+    return isPostsRoot || isPostDetail;
   }
 
-  if (pathname === href) {
-    return true;
-  }
-
-  return (
-    pathname.startsWith(href + "/") &&
-    !navLinks.some(
-      (l) => l.href !== href && pathname === l.href
-    )
-  );
+  return pathname === href || pathname.startsWith(href + "/");
 }
 
 ---

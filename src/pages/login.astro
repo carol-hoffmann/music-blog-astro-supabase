@@ -19,15 +19,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </header>
 
     <div class="posts-shell">
-      <div id="alreadyLogged" class="glass-panel" style="display:none;">
-        <p class="meta" style="margin:0 0 10px 0;">You are already logged in.</p>
-        <div class="form-actions">
-          <a class="btn" href="/account">Go to account</a>
-          <button class="btn" id="logoutBtn" type="button">Logout</button>
-        </div>
-        <p id="logoutMsg" class="form-msg meta"></p>
-      </div>
-
       <form id="loginForm" class="glass-panel" novalidate>
         <label>
           Email
@@ -45,72 +36,53 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <p class="meta" style="margin-top:12px;">
-          Don’t have an account? <a href="/register">Register</a>
+          Don't have an account? <a href="/register">Register</a>
         </p>
       </form>
     </div>
   </section>
 
   <script type="module">
-    import { supabase } from "../lib/supabaseClient";
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    function setMsg(el, text, status) {
-      if (!el) return;
-      el.textContent = text || "";
-      if (status) el.setAttribute("data-status", status);
-      else el.removeAttribute("data-status");
-    }
+    const urlMeta = document.querySelector('meta[name="supabase-url"]');
+    const keyMeta = document.querySelector('meta[name="supabase-anon-key"]');
 
-    function initLogin() {
-      const form = document.querySelector("#loginForm");
-      const msg = document.querySelector("#msg");
+    const supabaseUrl = urlMeta?.getAttribute("content") || "";
+    const supabaseAnonKey = keyMeta?.getAttribute("content") || "";
 
-      const alreadyLogged = document.querySelector("#alreadyLogged");
-      const logoutBtn = document.querySelector("#logoutBtn");
-      const logoutMsg = document.querySelector("#logoutMsg");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-      if (!(form instanceof HTMLFormElement)) return;
+    const form = document.querySelector("#loginForm");
+    const msg = document.querySelector("#msg");
+    const setMsg = (t) => msg && (msg.textContent = t);
 
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          form.style.display = "none";
-          alreadyLogged.style.display = "block";
-        } else {
-          form.style.display = "block";
-          alreadyLogged.style.display = "none";
-        }
-      });
-
+    if (form instanceof HTMLFormElement) {
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        setMsg(msg, "Logging in...", "info");
+        const formData = new FormData(form);
+        const email = String(formData.get("email") || "").trim();
+        const password = String(formData.get("password") || "");
 
-        const fd = new FormData(form);
-        const email = String(fd.get("email") || "").trim();
-        const password = String(fd.get("password") || "");
+        if (!email || !password) {
+          setMsg("Please fill email and password.");
+          return;
+        }
+
+        setMsg("Logging in...");
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
           console.error(error);
-          setMsg(msg, "Error: " + error.message, "error");
+          setMsg("Error: " + error.message);
           return;
         }
 
-        setMsg(msg, "Success! Redirecting...", "success");
-        setTimeout(() => (window.location.href = "/account"), 400);
-      });
-
-      logoutBtn?.addEventListener("click", async () => {
-        setMsg(logoutMsg, "Logging out...", "info");
-        await supabase.auth.signOut();
-        setMsg(logoutMsg, "Logged out.", "success");
-        setTimeout(() => (window.location.href = "/login"), 250);
+        setMsg("Success! Redirecting...");
+        setTimeout(() => (window.location.href = "/account"), 500);
       });
     }
-
-    document.addEventListener("astro:page-load", initLogin);
-    if (document.readyState !== "loading") initLogin();
   </script>
 </BaseLayout>

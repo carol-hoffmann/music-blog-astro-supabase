@@ -67,7 +67,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </section>
 
   <script type="module">
-    import { supabase } from "../lib/supabaseClient";
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const urlMeta = document.querySelector('meta[name="supabase-url"]');
+    const keyMeta = document.querySelector('meta[name="supabase-anon-key"]');
+
+    const supabaseUrl = urlMeta?.getAttribute("content") || "";
+    const supabaseAnonKey = keyMeta?.getAttribute("content") || "";
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     function setMsg(el, text, status) {
       if (!el) return;
@@ -76,7 +84,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       else el.removeAttribute("data-status");
     }
 
-    function initRegister() {
+    document.addEventListener("DOMContentLoaded", async () => {
       const form = document.querySelector("#registerForm");
       const msg = document.querySelector("#msg");
 
@@ -86,15 +94,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       if (!(form instanceof HTMLFormElement)) return;
 
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          form.style.display = "none";
-          alreadyLogged.style.display = "block";
-        } else {
-          form.style.display = "block";
-          alreadyLogged.style.display = "none";
-        }
-      });
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session) {
+        form.style.display = "none";
+        alreadyLogged.style.display = "block";
+      } else {
+        form.style.display = "block";
+        alreadyLogged.style.display = "none";
+      }
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -111,9 +119,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { full_name, username, favourite_genre },
-          },
+          options: { data: { full_name, username, favourite_genre } },
         });
 
         if (error) {
@@ -131,9 +137,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         setMsg(logoutMsg, "Logged out.", "success");
         setTimeout(() => (window.location.href = "/register"), 250);
       });
-    }
-
-    document.addEventListener("astro:page-load", initRegister);
-    if (document.readyState !== "loading") initRegister();
+    });
   </script>
 </BaseLayout>

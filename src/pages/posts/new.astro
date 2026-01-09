@@ -4,7 +4,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <BaseLayout title="New Post | Music Blog">
   <section class="page newpost-page">
-  
     <div class="posts-hero-bg" aria-hidden="true">
       <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
       <div class="posts-hero-overlay"></div>
@@ -23,7 +22,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <form id="postForm" class="glass-panel" novalidate>
         <label>
           Title
-          <input type="text" name="title" required placeholder="e.g. Best gig I’ve seen this year" />
+          <input
+            type="text"
+            name="title"
+            required
+            placeholder="e.g. Best gig I’ve seen this year"
+          />
         </label>
 
         <label>
@@ -45,30 +49,40 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   </section>
 
   <script type="module">
-    import { supabase } from "../../lib/supabaseClient";
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+    const urlMeta = document.querySelector('meta[name="supabase-url"]');
+    const keyMeta = document.querySelector('meta[name="supabase-anon-key"]');
 
+    const supabaseUrl = urlMeta?.getAttribute("content") || "";
+    const supabaseAnonKey = keyMeta?.getAttribute("content") || "";
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     const formEl = document.querySelector("#postForm");
     const msgEl = document.querySelector("#msg");
     const setMsg = (t) => msgEl && (msgEl.textContent = t);
 
+    // Guard: precisa estar logada
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
       window.location.href = "/login";
-    } else if (formEl instanceof HTMLFormElement) {
+    }
+
+    if (formEl instanceof HTMLFormElement) {
       formEl.addEventListener("submit", async (e) => {
         e.preventDefault();
-        setMsg("Publishing...");
 
-        const formData = new FormData(formEl);
-        const title = String(formData.get("title") || "").trim();
-        const content = String(formData.get("content") || "").trim();
+        const fd = new FormData(formEl);
+        const title = String(fd.get("title") || "").trim();
+        const content = String(fd.get("content") || "").trim();
 
         if (!title || !content) {
           setMsg("Please fill in title and content.");
           return;
         }
+
+        setMsg("Publishing...");
 
         const { error } = await supabase.from("posts").insert({
           title,

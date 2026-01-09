@@ -7,7 +7,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   description="Music Blog is a community-driven platform where music lovers share experiences, concert stories, and creative journeys."
 >
   <main class="home-hero">
-    <!-- IMAGEM DE FUNDO -->
     <div class="home-hero-image-layer">
       <img
         id="home-hero-image"
@@ -17,10 +16,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       />
     </div>
 
-    <!-- OVERLAY -->
     <div class="home-hero-overlay"></div>
 
-    <!-- CONTEÚDO -->
     <div class="home-hero-content">
       <h1 class="home-hero-title">SoundTalk</h1>
 
@@ -56,7 +53,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   function showNextImage() {
     if (!imageElement) return;
 
-    // fade OUT
     imageElement.classList.add("fade-out");
 
     setTimeout(() => {
@@ -64,7 +60,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       imageElement.src = heroImages[currentIndex];
 
       imageElement.onload = () => {
-        // fade IN
+
         imageElement.classList.remove("fade-out");
       };
     }, 350);
