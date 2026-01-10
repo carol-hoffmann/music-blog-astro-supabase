@@ -9,73 +9,67 @@ function setText(el: Element | null, t: string) {
 }
 
 async function init() {
-  const id = window.location.pathname.split("/").pop();
+  console.log("postPage.ts rodou ✅");
 
-  const titleEl = qs<HTMLElement>("#title");
-  const dateEl = qs<HTMLElement>("#date");
-  const contentEl = qs<HTMLElement>("#content");
+  const postRoot =
+    qs<HTMLElement>('article[data-post-id]') || qs<HTMLElement>("[data-post-id]");
+
+  const postId = postRoot?.dataset.postId;
+  const postUserId = postRoot?.dataset.postUserId;
+
+  console.log("postId:", postId);
+  console.log("postUserId:", postUserId);
+
   const msgEl = qs<HTMLElement>("#msg");
+
   const ownerActions = qs<HTMLElement>("#ownerActions");
   const editBtn = qs<HTMLAnchorElement>("#editBtn");
   const deleteBtn = qs<HTMLButtonElement>("#deleteBtn");
 
   const commentsWrap = qs<HTMLElement>("#commentsWrap");
   const commentsMsg = qs<HTMLElement>("#commentsMsg");
+
   const commentBox = qs<HTMLElement>("#commentBox");
   const commentLoginMsg = qs<HTMLElement>("#commentLoginMsg");
   const commentForm = qs<HTMLFormElement>("#commentForm");
   const commentFormMsg = qs<HTMLElement>("#commentFormMsg");
 
-  if (!id) {
-    setText(msgEl, "Missing post id.");
+  if (!postId) {
+    setText(msgEl, "Erro: não achei o post id na página (data-post-id).");
+    setText(commentsMsg, "Erro: post id não encontrado.");
     return;
   }
 
-  const { data: post, error } = await supabase
-    .from("posts")
-    .select("id, title, content, created_at, user_id")
-    .eq("id", id)
-    .single();
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr) console.error("auth.getUser error:", userErr);
 
-  if (error || !post) {
-    console.error(error);
-    setText(msgEl, "Post not found.");
-    return;
-  }
-
-  const postData = post;
-
-  if (titleEl) titleEl.textContent = postData.title ?? "";
-  if (dateEl) dateEl.textContent = new Date(postData.created_at).toLocaleString();
-  if (contentEl) contentEl.textContent = postData.content ?? "";
-
-  const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user ?? null;
 
-  if (user && user.id === postData.user_id && ownerActions && editBtn) {
-    ownerActions.style.display = "flex";
-    editBtn.href = `/posts/edit/${postData.id}`;
+  // ações do dono
+  if (user && postUserId && user.id === postUserId) {
+    if (ownerActions) ownerActions.style.display = "flex";
+    if (editBtn) editBtn.href = `/posts/edit/${postId}`;
   }
 
-  deleteBtn?.addEventListener("click", async () => {
-    if (!confirm("Delete this post? This cannot be undone.")) return;
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm("Delete this post? This cannot be undone.")) return;
 
-    setText(msgEl, "Deleting...");
+      setText(msgEl, "Deleting...");
 
-    const { error: delError } = await supabase
-      .from("posts")
-      .delete()
-      .eq("id", postData.id);
+      const { error: delError } = await supabase.from("posts").delete().eq("id", postId);
 
-    if (delError) {
-      console.error(delError);
-      setText(msgEl, "Error: " + delError.message);
-      return;
-    }
+      if (delError) {
+        console.error(delError);
+        setText(msgEl, "Error: " + delError.message);
+        return;
+      }
 
-    window.location.href = "/posts";
-  });
+      window.location.href = "/posts";
+    });
+  }
 
+  // mostrar form de comment
   if (user) {
     if (commentBox) commentBox.style.display = "block";
     if (commentLoginMsg) commentLoginMsg.style.display = "none";
@@ -89,12 +83,14 @@ async function init() {
 
     const { data: comments, error: cErr } = await supabase
       .from("comments")
-      .select("id, content, created_at, user_id")
-      .eq("post_id", postData.id)
+      .select("id, post_id, content, created_at, user_id")
+      .eq("post_id", postId)
       .order("created_at", { ascending: true });
 
+    console.log("comments:", comments);
+    console.log("comments error:", cErr);
+
     if (cErr) {
-      console.error(cErr);
       setText(commentsMsg, "Error loading comments: " + cErr.message);
       return;
     }
@@ -109,7 +105,7 @@ async function init() {
     const html = comments
       .map((c) => {
         const date = new Date(c.created_at).toLocaleString();
-        const author = c.user_id === user?.id ? "You" : c.user_id.slice(0, 8);
+        const author = c.user_id === user?.id ? "You" : String(c.user_id).slice(0, 8);
 
         return `
           <div class="comment-item">
@@ -141,13 +137,14 @@ async function init() {
       }
 
       const { error: insErr } = await supabase.from("comments").insert({
-        post_id: postData.id,
+        post_id: postId,
         user_id: user.id,
         content,
       });
 
+      console.log("insert error:", insErr);
+
       if (insErr) {
-        console.error(insErr);
         setText(commentFormMsg, "Error: " + insErr.message);
         return;
       }
@@ -161,4 +158,7 @@ async function init() {
   }
 }
 
+// Astro navegação + fallback
 document.addEventListener("astro:page-load", init);
+if (document.readyState !== "loading") init();
+else document.addEventListener("DOMContentLoaded", init);

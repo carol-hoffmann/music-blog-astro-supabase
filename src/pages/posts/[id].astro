@@ -16,7 +16,6 @@ if (error || !post) {
 }
 ---
 
-
 <BaseLayout title="Post | Music Blog">
   <section class="page post-page">
     <div class="posts-hero-bg" aria-hidden="true">
@@ -25,20 +24,25 @@ if (error || !post) {
     </div>
 
     <div class="post-shell">
-      <article class="post-panel">
+      <!-- IMPORTANTE: data-post-id e data-post-user-id -->
+      <article
+        class="post-panel"
+        data-post-id={post.id}
+        data-post-user-id={post.user_id}
+      >
         <p class="meta post-back">
           <a href="/posts">← Back to posts</a>
         </p>
 
         <h1 class="post-title">{post.title}</h1>
-<p class="meta post-date">
-  {new Date(post.created_at).toLocaleString()}
-</p>
 
-<div class="post-content">
-  {post.content}
-</div>
+        <p class="meta post-date">
+          {new Date(post.created_at).toLocaleString()}
+        </p>
 
+        <div class="post-content">
+          {post.content}
+        </div>
 
         <div id="ownerActions" class="post-actions" style="display:none;">
           <a class="btn" id="editBtn" href="#">Edit</a>
@@ -78,9 +82,8 @@ if (error || !post) {
     </div>
   </section>
 
+  <!-- Carregar o script via Vite (não dá 404) -->
   <script type="module">
-  import "../../scripts/postActions.ts";
-</script>
-
-
+    import "/src/scripts/postPage.ts";
+  </script>
 </BaseLayout>
