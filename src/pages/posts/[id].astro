@@ -1,7 +1,8 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import postPageUrl from "../../scripts/postPage.ts?url";
+
+const postPageUrl = new URL("../../scripts/postPage.ts", import.meta.url);
 ---
 
 <BaseLayout title="Post | Music Blog">
@@ -60,8 +61,6 @@ import postPageUrl from "../../scripts/postPage.ts?url";
     </div>
   </section>
 
-  <script type="module">
-  import "/src/scripts/postPage.ts";
-</script>
-
+  <!-- ✅ isso vira um .js compilado no build -->
+  <script type="module" src={postPageUrl.href}></script>
 </BaseLayout>
