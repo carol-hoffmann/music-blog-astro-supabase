@@ -2,7 +2,8 @@
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { supabase } from "../../lib/supabaseClient";
-import postPageUrl from "../../scripts/postPage.ts?url";
+import postPageUrl from "../../scripts/postPage.entry.js?url";
+
 
 
 const { id } = Astro.params;
@@ -83,7 +84,7 @@ if (error || !post) {
       </section>
     </div>
   </section>
-
 <script type="module" src={postPageUrl}></script>
+
 
 </BaseLayout>
