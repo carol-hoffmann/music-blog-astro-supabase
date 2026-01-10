@@ -1,6 +1,8 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+
+const { id } = Astro.params;
 ---
 
 <BaseLayout title="Edit Post | Music Blog">
@@ -20,7 +22,8 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
     </header>
 
     <div class="posts-shell">
-      <form id="editForm" class="glass-panel" novalidate>
+      <!-- ✅ Passa o id para o JS sem depender de URL parsing -->
+      <form id="editForm" class="glass-panel" novalidate data-post-id={id}>
         <label>
           Title
           <input id="title" type="text" name="title" required />
@@ -39,89 +42,9 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <script type="module">
-    import { supabase } from "../../../lib/supabaseClient";
+  <!-- ✅ Import via Vite (não dá 404 em /lib/...) -->
+ <script type="module">
+  import "/src/scripts/editPostPage.ts";
+</script>
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      const id = window.location.pathname.split("/").pop();
-
-      const formEl = document.querySelector("#editForm");
-      const msgEl = document.querySelector("#msg");
-      const titleInput = document.querySelector("#title");
-      const contentInput = document.querySelector("#content");
-
-      const setMsg = (t) => {
-        if (msgEl) msgEl.textContent = t || "";
-      };
-
-      if (!(formEl instanceof HTMLFormElement)) return;
-
-      // precisa estar logada
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !userData?.user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!id) {
-        setMsg("Missing post id.");
-        return;
-      }
-
-      setMsg("Loading post...");
-
-      const { data: post, error } = await supabase
-        .from("posts")
-        .select("id, title, content, user_id")
-        .eq("id", id)
-        .single();
-
-      if (error || !post) {
-        console.error(error);
-        setMsg("Post not found.");
-        return;
-      }
-
-      // só o autor pode editar (RLS também protege)
-      if (userData.user.id !== post.user_id) {
-        setMsg("You are not allowed to edit this post.");
-        return;
-      }
-
-      titleInput.value = post.title ?? "";
-      contentInput.value = post.content ?? "";
-      setMsg("");
-
-      formEl.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const title = String(titleInput.value || "").trim();
-        const content = String(contentInput.value || "").trim();
-
-        if (!title || !content) {
-          setMsg("Please fill in title and content.");
-          return;
-        }
-
-        setMsg("Saving...");
-
-        // ⚠️ se sua tabela não tem updated_at, remova essa linha
-        const { error: upError } = await supabase
-          .from("posts")
-          .update({ title, content, updated_at: new Date().toISOString() })
-          .eq("id", post.id);
-
-        if (upError) {
-          console.error(upError);
-          setMsg("Error: " + upError.message);
-          return;
-        }
-
-        setMsg("Saved! Redirecting...");
-        setTimeout(() => {
-          window.location.href = `/posts/${post.id}`;
-        }, 700);
-      });
-    });
-  </script>
 </BaseLayout>
