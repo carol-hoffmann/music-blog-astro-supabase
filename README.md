@@ -1,43 +1,29 @@
-# Astro Starter Kit: Minimal
+# 🎵 SoundTalk Music Blog — Astro + Supabase
 
-```sh
-npm create astro@latest -- --template minimal
-```
+A personal music blog built with **Astro** and **Supabase**, featuring authentication, posts, comments, and user accounts.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+This project was developed as part of the **Web Frameworks** module of the  
+**MSc. in Interactive Digital Media** at **Griffith College**.
 
-## 🚀 Project Structure
+---
 
-Inside of your Astro project, you'll see the following folders and files:
+## ✨ Features
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+- 🔐 User authentication (Supabase Auth)
+- 📝 Create, edit and delete blog posts
+- 💬 Comment system for logged-in users
+- 👤 Account page with profile information
+- 📂 "My posts" section (view and edit your own posts)
+- 🎨 Custom UI with glassmorphism style
+- 🚀 Deployed-ready (works locally and in production)
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+---
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## 👩‍🎓 Student Information
 
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+**Caroline Cristina Hoffmann**  
+**Student Number:** 3177725  
+**Programme:** MSc. in Interactive Digital Media  
+**Institution:** Griffith College  
+**Module:** Web Frameworks
+**Lecturer:** Mark Rowe
