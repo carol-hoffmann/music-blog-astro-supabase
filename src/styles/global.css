@@ -612,3 +612,17 @@ input:focus,textarea:focus{
   .page-head{align-items:flex-start;flex-direction:column}
   .post-panel,.glass-panel{padding:20px}
 }
+
+.account-page .glass-panel .page-subtitle {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.account-page .glass-panel .btn-ghost {
+  color: rgba(0, 0, 0, 0.85);
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+.account-page .post-card-title {
+  color: rgba(0, 0, 0, 0.9);
+}
+
