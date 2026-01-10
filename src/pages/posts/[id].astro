@@ -1,9 +1,21 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { supabase } from "../../lib/supabaseClient";
 
-const postEntryUrl = new URL("../../scripts/postPage-entry.ts", import.meta.url);
+const { id } = Astro.params;
+
+const { data: post, error } = await supabase
+  .from("posts")
+  .select("id, title, content, created_at, user_id")
+  .eq("id", id)
+  .single();
+
+if (error || !post) {
+  throw new Error("Post not found");
+}
 ---
+
 
 <BaseLayout title="Post | Music Blog">
   <section class="page post-page">
@@ -18,10 +30,15 @@ const postEntryUrl = new URL("../../scripts/postPage-entry.ts", import.meta.url)
           <a href="/posts">← Back to posts</a>
         </p>
 
-        <h1 id="title" class="post-title">Loading...</h1>
-        <p id="date" class="meta post-date"></p>
+        <h1 class="post-title">{post.title}</h1>
+<p class="meta post-date">
+  {new Date(post.created_at).toLocaleString()}
+</p>
 
-        <div id="content" class="post-content"></div>
+<div class="post-content">
+  {post.content}
+</div>
+
 
         <div id="ownerActions" class="post-actions" style="display:none;">
           <a class="btn" id="editBtn" href="#">Edit</a>
@@ -61,6 +78,9 @@ const postEntryUrl = new URL("../../scripts/postPage-entry.ts", import.meta.url)
     </div>
   </section>
 
-  <!-- ✅ Vite/Astro vai compilar e gerar um .js real para produção -->
-  <script type="module" src={postEntryUrl.href}></script>
+  <script type="module">
+  import "../../scripts/postActions.ts";
+</script>
+
+
 </BaseLayout>
