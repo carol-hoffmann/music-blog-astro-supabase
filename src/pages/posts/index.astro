@@ -28,59 +28,63 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <script>
-    import { supabase } from "../../lib/supabaseClient";
+<script>
+  import { supabase } from "../../lib/supabaseClient";
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      const wrap = document.querySelector("#postsWrap");
-      const msg = document.querySelector("#msg");
+  async function init() {
+    const wrap = document.querySelector("#postsWrap");
+    const msg = document.querySelector("#msg");
+    if (!wrap || !msg) return;
 
-      const { data, error } = await supabase
-        .from("posts")
-        .select("id, title, created_at, content")
-        .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("posts")
+      .select("id, title, created_at, content")
+      .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error(error);
-        msg.textContent = "Error loading posts: " + error.message;
-        return;
-      }
+    if (error) {
+      console.error(error);
+      msg.textContent = "Error loading posts: " + error.message;
+      return;
+    }
 
-      if (!data || data.length === 0) {
-        msg.textContent = "No posts yet.";
-        return;
-      }
+    if (!data || data.length === 0) {
+      msg.textContent = "No posts yet.";
+      return;
+    }
 
-      msg.remove();
+    msg.remove();
 
-      const formatDate = (iso) => new Date(iso).toLocaleString();
-      const excerpt = (text, n = 130) => {
-        const t = String(text || "").trim();
-        if (!t) return "No description yet.";
-        return t.length > n ? t.slice(0, n).trim() + "…" : t;
-      };
+    const formatDate = (iso) => new Date(iso).toLocaleString();
+    const excerpt = (text, n = 130) => {
+      const t = String(text || "").trim();
+      if (!t) return "No description yet.";
+      return t.length > n ? t.slice(0, n).trim() + "…" : t;
+    };
 
-      wrap.innerHTML = data
-        .map(
-          (p) => `
-          <article class="post-card">
-            <a class="post-card-link" href="/posts/${p.id}">
-              <div class="post-card-top">
-                <h3 class="post-card-title">${p.title}</h3>
-                <p class="post-card-date">${formatDate(p.created_at)}</p>
-              </div>
+    wrap.innerHTML = data
+      .map(
+        (p) => `
+        <article class="post-card">
+          <a class="post-card-link" href="/posts/${p.id}">
+            <div class="post-card-top">
+              <h3 class="post-card-title">${p.title}</h3>
+              <p class="post-card-date">${formatDate(p.created_at)}</p>
+            </div>
+            <p class="post-card-excerpt">${excerpt(p.content)}</p>
+            <div class="post-card-cta">
+              <span>Read post</span>
+              <span class="post-card-arrow">→</span>
+            </div>
+          </a>
+        </article>
+      `
+      )
+      .join("");
+  }
 
-              <p class="post-card-excerpt">${excerpt(p.content)}</p>
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState !== "loading") init();
+  else document.addEventListener("DOMContentLoaded", init);
+</script>
 
-              <div class="post-card-cta">
-                <span>Read post</span>
-                <span class="post-card-arrow">→</span>
-              </div>
-            </a>
-          </article>
-        `
-        )
-        .join("");
-    });
-  </script>
 </BaseLayout>
