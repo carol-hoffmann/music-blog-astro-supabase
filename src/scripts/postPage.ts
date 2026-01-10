@@ -43,16 +43,18 @@ async function init() {
     return;
   }
 
-  if (titleEl) titleEl.textContent = post.title;
-  if (dateEl) dateEl.textContent = new Date(post.created_at).toLocaleString();
-  if (contentEl) contentEl.textContent = post.content;
+  const postData = post;
+
+  if (titleEl) titleEl.textContent = postData.title ?? "";
+  if (dateEl) dateEl.textContent = new Date(postData.created_at).toLocaleString();
+  if (contentEl) contentEl.textContent = postData.content ?? "";
 
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user ?? null;
 
-  if (user && user.id === post.user_id && ownerActions && editBtn) {
+  if (user && user.id === postData.user_id && ownerActions && editBtn) {
     ownerActions.style.display = "flex";
-    editBtn.href = `/posts/edit/${post.id}`;
+    editBtn.href = `/posts/edit/${postData.id}`;
   }
 
   deleteBtn?.addEventListener("click", async () => {
@@ -63,7 +65,7 @@ async function init() {
     const { error: delError } = await supabase
       .from("posts")
       .delete()
-      .eq("id", post.id);
+      .eq("id", postData.id);
 
     if (delError) {
       console.error(delError);
@@ -88,7 +90,7 @@ async function init() {
     const { data: comments, error: cErr } = await supabase
       .from("comments")
       .select("id, content, created_at, user_id")
-      .eq("post_id", post.id)
+      .eq("post_id", postData.id)
       .order("created_at", { ascending: true });
 
     if (cErr) {
@@ -139,7 +141,7 @@ async function init() {
       }
 
       const { error: insErr } = await supabase.from("comments").insert({
-        post_id: post.id,
+        post_id: postData.id,
         user_id: user.id,
         content,
       });
@@ -160,5 +162,3 @@ async function init() {
 }
 
 document.addEventListener("astro:page-load", init);
-if (document.readyState !== "loading") init();
-else document.addEventListener("DOMContentLoaded", init);
