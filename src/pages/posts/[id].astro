@@ -5,7 +5,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <BaseLayout title="Post | Music Blog">
   <section class="page post-page">
-    <!-- Background igual /posts (opcional: se você quiser usar a mesma imagem aqui também) -->
     <div class="posts-hero-bg" aria-hidden="true">
       <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
 
@@ -13,7 +12,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
 
     <div class="post-shell">
-      <!-- POST -->
       <article class="post-panel">
         <p class="meta post-back">
           <a href="/posts">← Back to posts</a>
@@ -32,7 +30,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         <p id="msg" class="meta post-msg"></p>
       </article>
 
-      <!-- COMMENTS -->
       <section class="post-panel">
         <div class="comments-head">
           <h2 class="comments-title">Comments</h2>
@@ -63,7 +60,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <script type="module">
+  <script type="module" src={Astro.resolve("../../scripts/postPage.ts")}></script>
     import { supabase } from "../../lib/supabaseClient";
 
     document.addEventListener("DOMContentLoaded", async () => {
