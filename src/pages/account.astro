@@ -19,6 +19,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </header>
 
     <div class="posts-shell">
+      <!-- Profile -->
       <div class="glass-panel">
         <p id="status" class="meta is-loading">Checking session...</p>
 
@@ -29,20 +30,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
           <label>
             Full name
-            <input type="text" name="full_name" id="full_name" required disabled />
+            <input type="text" id="full_name" required disabled />
           </label>
 
           <label>
             Username
-            <input type="text" name="username" id="username" required disabled />
+            <input type="text" id="username" required disabled />
           </label>
 
           <label>
             Favourite genre
-            <input type="text" name="favourite_genre" id="favourite_genre" required disabled />
+            <input type="text" id="favourite_genre" required disabled />
           </label>
 
-          <div class="form-actions" style="margin-top:14px; align-items:center;">
+          <div class="form-actions" style="margin-top:14px;">
             <button class="btn" id="editBtn" type="button">Edit profile</button>
             <button class="btn" id="saveBtn" type="submit" disabled>Save changes</button>
             <button class="btn btn-ghost" id="logoutBtn" type="button">Logout</button>
@@ -54,142 +55,174 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           You are not logged in. <a href="/login">Login</a>
         </p>
       </div>
+
+      <!-- My posts -->
+      <section class="glass-panel" style="margin-top:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h2 class="page-subtitle" style="margin:0;">My posts</h2>
+          <a class="btn btn-ghost" href="/posts/new">New post</a>
+        </div>
+
+        <div id="myPostsWrap" class="posts-grid" style="margin-top:12px;">
+          <p id="myPostsMsg" class="meta">Loading your posts...</p>
+        </div>
+      </section>
     </div>
   </section>
 
   <script>
     import { supabase } from "../lib/supabaseClient";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const status = document.querySelector("#status");
-      const loginHint = document.querySelector("#loginHint");
-      const form = document.querySelector("#profileForm");
-      const msg = document.querySelector("#msg");
+    async function init() {
+      const qs = (s) => document.querySelector(s);
 
-      const emailEl = document.querySelector("#email");
-      const fullNameEl = document.querySelector("#full_name");
-      const usernameEl = document.querySelector("#username");
-      const favEl = document.querySelector("#favourite_genre");
+      const status = qs("#status");
+      const loginHint = qs("#loginHint");
+      const form = qs("#profileForm");
+      const msg = qs("#msg");
 
-      const editBtn = document.querySelector("#editBtn");
-      const saveBtn = document.querySelector("#saveBtn");
-      const logoutBtn = document.querySelector("#logoutBtn");
+      const emailEl = qs("#email");
+      const fullNameEl = qs("#full_name");
+      const usernameEl = qs("#username");
+      const favEl = qs("#favourite_genre");
 
-      const setStatus = (t) => status && (status.textContent = t);
+      const editBtn = qs("#editBtn");
+      const saveBtn = qs("#saveBtn");
+      const logoutBtn = qs("#logoutBtn");
+
+      const myPostsWrap = qs("#myPostsWrap");
+      const myPostsMsg = qs("#myPostsMsg");
+
+      const setStatus = (t) => status && (status.textContent = t || "");
       const setMsg = (t) => msg && (msg.textContent = t || "");
+      const setMyPostsMsg = (t) => myPostsMsg && (myPostsMsg.textContent = t || "");
 
       let userId = null;
       let editMode = false;
 
       function setEditing(on) {
         editMode = on;
-        if (fullNameEl) fullNameEl.disabled = !on;
-        if (usernameEl) usernameEl.disabled = !on;
-        if (favEl) favEl.disabled = !on;
-
-        if (saveBtn) saveBtn.disabled = !on;
-
-        if (editBtn) editBtn.textContent = on ? "Cancel" : "Edit profile";
+        fullNameEl.disabled = !on;
+        usernameEl.disabled = !on;
+        favEl.disabled = !on;
+        saveBtn.disabled = !on;
+        editBtn.textContent = on ? "Cancel" : "Edit profile";
         setMsg("");
       }
 
-      (async () => {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) console.error(error);
+      // Session
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
 
-        status?.classList.remove("is-loading");
+      status?.classList.remove("is-loading");
 
-        const session = data?.session;
-        if (!session) {
-          setStatus("");
-          if (loginHint) loginHint.style.display = "block";
+      if (!session) {
+        setStatus("");
+        loginHint.style.display = "block";
+        setMyPostsMsg("Login to see your posts.");
+        return;
+      }
+
+      const user = session.user;
+      userId = user.id;
+      emailEl.textContent = user.email || "";
+
+      // Profile
+      setStatus("Loading profile...");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, username, favourite_genre")
+        .eq("id", userId)
+        .maybeSingle();
+
+      fullNameEl.value = profile?.full_name ?? "";
+      usernameEl.value = profile?.username ?? "";
+      favEl.value = profile?.favourite_genre ?? "";
+
+      setStatus("");
+      form.style.display = "block";
+      setEditing(false);
+
+      editBtn.addEventListener("click", () => setEditing(!editMode));
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!editMode) return;
+
+        setMsg("Saving...");
+        const { error } = await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            full_name: fullNameEl.value.trim(),
+            username: usernameEl.value.trim(),
+            favourite_genre: favEl.value.trim(),
+          },
+          { onConflict: "id" }
+        );
+
+        if (error) {
+          setMsg("Error: " + error.message);
           return;
         }
 
-        const user = session.user;
-        userId = user.id;
-
-        if (emailEl) emailEl.textContent = user.email || "";
-
-        setStatus("Loading profile...");
-
-        const { data: profile, error: profErr } = await supabase
-          .from("profiles")
-          .select("full_name, username, favourite_genre")
-          .eq("id", userId)
-          .maybeSingle();
-
-        if (profErr) {
-          console.error(profErr);
-          setMsg("Error loading profile: " + profErr.message);
-        }
-
-        if (fullNameEl) fullNameEl.value = profile?.full_name ?? "";
-        if (usernameEl) usernameEl.value = profile?.username ?? "";
-        if (favEl) favEl.value = profile?.favourite_genre ?? "";
-
-        setStatus("");
-        if (form) form.style.display = "block";
-
+        setMsg("Saved!");
         setEditing(false);
+        setTimeout(() => setMsg(""), 800);
+      });
 
-        editBtn?.addEventListener("click", () => {
-          if (editMode) {
-            (async () => {
-              setStatus("Reverting...");
-              const { data: p2 } = await supabase
-                .from("profiles")
-                .select("full_name, username, favourite_genre")
-                .eq("id", userId)
-                .maybeSingle();
-              if (fullNameEl) fullNameEl.value = p2?.full_name ?? "";
-              if (usernameEl) usernameEl.value = p2?.username ?? "";
-              if (favEl) favEl.value = p2?.favourite_genre ?? "";
-              setStatus("");
-              setEditing(false);
-            })();
-          } else {
-            setEditing(true);
-          }
-        });
+      logoutBtn.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/login";
+      });
 
-        if (form instanceof HTMLFormElement) {
-          form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            if (!editMode) return;
+      // My posts
+      const { data: posts, error } = await supabase
+        .from("posts")
+        .select("id, title, created_at, content")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-            setMsg("Saving...");
+      if (error) {
+        setMyPostsMsg("Error loading posts.");
+        return;
+      }
 
-            const full_name = String(fullNameEl?.value || "").trim();
-            const username = String(usernameEl?.value || "").trim();
-            const favourite_genre = String(favEl?.value || "").trim();
+      if (!posts || posts.length === 0) {
+        setMyPostsMsg("You haven't published any posts yet.");
+        return;
+      }
 
-            const { error: upErr } = await supabase
-              .from("profiles")
-              .upsert(
-                { id: userId, full_name, username, favourite_genre },
-                { onConflict: "id" }
-              );
+      myPostsMsg.remove();
 
-            if (upErr) {
-              console.error(upErr);
-              setMsg("Error: " + upErr.message);
-              return;
-            }
+      const formatDate = (iso) => new Date(iso).toLocaleString();
+      const excerpt = (t, n = 120) =>
+        t && t.length > n ? t.slice(0, n).trim() + "…" : t || "No description yet.";
 
-            setMsg("Saved!");
-            setEditing(false);
-            setTimeout(() => setMsg(""), 900);
-          });
-        }
+      myPostsWrap.innerHTML = posts
+        .map(
+          (p) => `
+          <article class="post-card">
+            <div class="post-card-top">
+              <h3 class="post-card-title">${p.title}</h3>
+              <p class="post-card-date">${formatDate(p.created_at)}</p>
+            </div>
 
-        logoutBtn?.addEventListener("click", async () => {
-          await supabase.auth.signOut();
-          localStorage.clear();
-          sessionStorage.clear();
-          window.location.href = "/login";
-        });
-      })();
-    });
+            <p class="post-card-excerpt">${excerpt(p.content)}</p>
+
+            <div class="post-card-cta" style="display:flex; gap:8px;">
+              <a class="btn btn-ghost" href="/posts/${p.id}">View</a>
+              <a class="btn" href="/posts/edit/${p.id}">Edit</a>
+            </div>
+          </article>
+        `
+        )
+        .join("");
+    }
+
+    document.addEventListener("astro:page-load", init);
+    if (document.readyState !== "loading") init();
+    else document.addEventListener("DOMContentLoaded", init);
   </script>
 </BaseLayout>
