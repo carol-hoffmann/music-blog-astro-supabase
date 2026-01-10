@@ -1,6 +1,8 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import editPostUrl from "../../../scripts/editPostPage.ts?url";
+
 
 const { id } = Astro.params;
 ---
@@ -42,9 +44,7 @@ const { id } = Astro.params;
     </div>
   </section>
 
-  <!-- ✅ Import via Vite (não dá 404 em /lib/...) -->
- <script type="module">
-  import "/src/scripts/editPostPage.ts";
-</script>
+<script type="module" src={editPostUrl}></script>
+
 
 </BaseLayout>

@@ -2,6 +2,8 @@
 export const prerender = false;
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { supabase } from "../../lib/supabaseClient";
+import postPageUrl from "../../scripts/postPage.ts?url";
+
 
 const { id } = Astro.params;
 
@@ -82,8 +84,6 @@ if (error || !post) {
     </div>
   </section>
 
-  <!-- Carregar o script via Vite (não dá 404) -->
-  <script type="module">
-    import "/src/scripts/postPage.ts";
-  </script>
+<script type="module" src={postPageUrl}></script>
+
 </BaseLayout>
