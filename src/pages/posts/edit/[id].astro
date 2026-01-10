@@ -1,8 +1,6 @@
 ---
 export const prerender = false;
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import editPostUrl from "../../../scripts/editPostPage.entry.js?url";
-
 
 
 const { id } = Astro.params;
@@ -45,7 +43,10 @@ const { id } = Astro.params;
     </div>
   </section>
 
-<script type="module" src={editPostUrl}></script>
+<script>
+  import "../../../scripts/editPostPage.ts";
+</script>
+
 
 
 
