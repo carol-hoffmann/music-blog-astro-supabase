@@ -1,1 +1,1 @@
-import "./editPostPage.ts";
+import "/src/scripts/editPostPage.ts";

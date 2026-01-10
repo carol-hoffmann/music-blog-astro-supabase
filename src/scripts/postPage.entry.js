@@ -1,1 +1,1 @@
-import "./postPage.ts";
+import "/src/scripts/postPage.ts";
