@@ -36,20 +36,45 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const msg = document.querySelector("#msg");
     if (!wrap || !msg) return;
 
-    const { data, error } = await supabase
+    // 1) busca posts (inclui a coluna que referencia o autor)
+    // Troque "user_id" abaixo se no seu banco for "author_id" ou outro nome.
+    const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("id, title, created_at, content")
+      .select("id, title, created_at, content, user_id")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error);
-      msg.textContent = "Error loading posts: " + error.message;
+    if (postsError) {
+      console.error(postsError);
+      msg.textContent = "Error loading posts: " + postsError.message;
       return;
     }
 
-    if (!data || data.length === 0) {
+    if (!posts || posts.length === 0) {
       msg.textContent = "No posts yet.";
       return;
+    }
+
+    // 2) pega ids únicos dos autores
+    const userIds = Array.from(
+      new Set(posts.map((p) => p.user_id).filter(Boolean))
+    );
+
+    // 3) busca perfis desses autores (sem join)
+    // Se sua tabela não se chama "profiles" ou o campo não é "username", me diga que eu ajusto.
+    let profilesById = {};
+    if (userIds.length > 0) {
+      const { data: profiles, error: profError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("id", userIds);
+
+      if (profError) {
+        console.warn("Profiles load failed:", profError.message);
+      } else {
+        profilesById = Object.fromEntries(
+          (profiles || []).map((pr) => [pr.id, pr])
+        );
+      }
     }
 
     msg.remove();
@@ -61,7 +86,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       return t.length > n ? t.slice(0, n).trim() + "…" : t;
     };
 
-    wrap.innerHTML = data
+    const authorLabel = (p) => {
+      const pr = profilesById[p.user_id];
+      return pr?.username ? `@${pr.username}` : "@unknown";
+    };
+
+    wrap.innerHTML = posts
       .map(
         (p) => `
         <article class="post-card">
@@ -69,6 +99,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
             <div class="post-card-top">
               <h3 class="post-card-title">${p.title}</h3>
               <p class="post-card-date">${formatDate(p.created_at)}</p>
+              <p class="post-card-author">${authorLabel(p)}</p>
             </div>
             <p class="post-card-excerpt">${excerpt(p.content)}</p>
             <div class="post-card-cta">
@@ -86,5 +117,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   if (document.readyState !== "loading") init();
   else document.addEventListener("DOMContentLoaded", init);
 </script>
+
 
 </BaseLayout>

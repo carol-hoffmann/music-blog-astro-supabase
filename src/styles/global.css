@@ -234,16 +234,10 @@ input:focus,textarea:focus{
   border-bottom:1px solid rgba(244,239,232,.9);
 }
 
+/* ✅ Removido duplicado: havia duas regras iguais para o estado ativo */
 .nav-links a[aria-current="page"],
-.nav-links a[data-active="true"]{
-  opacity:1;
-  font-weight:600;
-  transform:translateY(-1px);
-  border-bottom:2px solid rgba(244,239,232,.95);
-}
-
-.nav-links a.nav-link--active,
-.nav-links a[aria-current="page"]{
+.nav-links a[data-active="true"],
+.nav-links a.nav-link--active{
   opacity:1;
   font-weight:600;
   transform:translateY(-1px);
@@ -386,6 +380,15 @@ input:focus,textarea:focus{
   color:rgba(0,0,0,.65);
 }
 
+/* ✅ username no card de listagem */
+.post-card-author{
+  margin:0 0 12px 0;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.65);
+}
+
 .post-card-excerpt{
   margin:0 0 14px 0;
   font-size:13px;
@@ -449,6 +452,12 @@ input:focus,textarea:focus{
 
 .post-date{margin:0 0 14px;color:rgba(0,0,0,.55)}
 
+/* ✅ username no post individual */
+.post-author{
+  margin:-8px 0 14px;
+  color:rgba(0,0,0,.65);
+}
+
 .post-content{
   margin-top:10px;
   color:rgba(0,0,0,.82);
@@ -491,6 +500,19 @@ input:focus,textarea:focus{
   align-items:center;
   flex-wrap:wrap;
 }
+
+/* ✅ deixa o texto e o link de login pretos (bem localizado) */
+#commentLoginMsg{
+  color:rgba(0,0,0,.75);
+}
+#commentLoginMsg a{
+  color:rgba(0,0,0,.9);
+  font-weight:500;
+  text-decoration:underline;
+  text-decoration-color:rgba(0,0,0,.35);
+  text-underline-offset:3px;
+}
+#commentLoginMsg a:hover{opacity:.85}
 
 .post-panel textarea,
 .post-panel input,
@@ -625,4 +647,3 @@ input:focus,textarea:focus{
 .account-page .post-card-title {
   color: rgba(0, 0, 0, 0.9);
 }
-

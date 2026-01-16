@@ -1,10 +1,12 @@
 ---
 export const prerender = false;
+
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { supabase } from "../../lib/supabaseClient";
 
 const { id } = Astro.params;
 
+// 1) Busca o post
 const { data: post, error } = await supabase
   .from("posts")
   .select("id, title, content, created_at, user_id")
@@ -14,12 +16,28 @@ const { data: post, error } = await supabase
 if (error || !post) {
   throw new Error("Post not found");
 }
+
+// 2) Busca o perfil do autor (sem FK, seguro)
+const { data: authorProfile } = await supabase
+  .from("profiles")
+  .select("username")
+  .eq("id", post.user_id)
+  .maybeSingle();
+
+const authorUsername = authorProfile?.username
+  ? `@${authorProfile.username}`
+  : "@unknown";
 ---
 
 <BaseLayout title="Post | Music Blog">
   <section class="page post-page">
     <div class="posts-hero-bg" aria-hidden="true">
-      <img class="posts-hero-img" src="/images/hero5.jpg" alt="" loading="eager" />
+      <img
+        class="posts-hero-img"
+        src="/images/hero5.jpg"
+        alt=""
+        loading="eager"
+      />
       <div class="posts-hero-overlay"></div>
     </div>
 
@@ -40,13 +58,18 @@ if (error || !post) {
           {new Date(post.created_at).toLocaleString()}
         </p>
 
+        <!-- ✅ username do autor -->
+        <p class="meta post-author">{authorUsername}</p>
+
         <div class="post-content">
           {post.content}
         </div>
 
         <div id="ownerActions" class="post-actions" style="display:none;">
           <a class="btn" id="editBtn" href="#">Edit</a>
-          <button class="btn" id="deleteBtn" type="button">Delete</button>
+          <button class="btn" id="deleteBtn" type="button">
+            Delete
+          </button>
         </div>
 
         <p id="msg" class="meta post-msg"></p>
@@ -58,7 +81,9 @@ if (error || !post) {
         </div>
 
         <div id="commentsWrap" class="comments-wrap">
-          <p id="commentsMsg" class="meta">Loading comments...</p>
+          <p id="commentsMsg" class="meta">
+            Loading comments...
+          </p>
         </div>
 
         <div id="commentBox" class="comment-box" style="display:none;">
@@ -69,22 +94,27 @@ if (error || !post) {
             </label>
 
             <div class="comment-actions">
-              <button class="btn" type="submit">Post comment</button>
+              <button class="btn" type="submit">
+                Post comment
+              </button>
               <p id="commentFormMsg" class="meta"></p>
             </div>
           </form>
         </div>
 
-        <p id="commentLoginMsg" class="meta" style="display:none;">
-          You must be logged in to comment. <a href="/login">Login</a>
+        <p
+          id="commentLoginMsg"
+          class="meta"
+          style="display:none;"
+        >
+          You must be logged in to comment.
+          <a href="/login">Login</a>
         </p>
       </section>
     </div>
   </section>
-<script>
-  import "../../scripts/postPage.ts";
-</script>
 
-
-
+  <script>
+    import "../../scripts/postPage.ts";
+  </script>
 </BaseLayout>
